@@ -61,7 +61,9 @@ See [vault/README.md](vault/README.md)
 
 ## Setup guides
 
-- [Vapi phone setup](docs/VAPI_SETUP.md)
+- [Vapi phone setup](docs/VAPI_SETUP.md) — Phase 1 (now)
+- [Voice stack & LiveKit migration](docs/VOICE_STACK.md) — Phase 2 (sovereign)
+- [SARA persona](docs/SARA_PERSONA.md) — voice co-pilot rules
 - [n8n workflow setup](docs/N8N_SETUP.md)
 - [Full architecture & roadmap](docs/ARCHITECTURE.md)
 

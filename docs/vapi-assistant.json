@@ -1,16 +1,22 @@
 {
-  "name": "Empire Voice OS",
+  "name": "SARA — Voice OS",
   "model": {
     "provider": "openai",
     "model": "gpt-4o",
-    "temperature": 0.7
+    "temperature": 0.3
   },
   "voice": {
     "provider": "11labs",
-    "voiceId": "YOUR_VOICE_ID"
+    "voiceId": "YOUR_VOICE_ID",
+    "model": "eleven_flash_v2_5",
+    "stability": 0.7,
+    "similarityBoost": 0.8
   },
-  "firstMessage": "Command center online. I'm your Voice OS — ready to execute. What are we building today?",
-  "systemPrompt": "You are the Voice OS for a one-man business empire. The caller is the Commander — treat every instruction as a direct order.\n\nYour job:\n1. Listen carefully and confirm what you heard before acting.\n2. Use your tools to create tasks, log notes, queue decisions, and give briefings.\n3. When the Commander wants something built or done online, create a task with clear title and description.\n4. When a decision needs internet/review later, queue it for the Command Center portal.\n5. Be concise — the Commander may be on a phone call at work. No fluff.\n6. Always end with what happens next.\n\nYou CAN:\n- Create and update tasks\n- Log notes and ideas\n- Queue decisions for later review\n- Give status briefings\n\nYou CANNOT (yet):\n- Send emails or messages directly\n- Make purchases\n- Access external accounts\n\nFor anything beyond your tools, create a task describing exactly what needs to happen.",
+  "firstMessage": "Command center online. Awaiting orders.",
+  "endCallMessage": "Command center updated. Out.",
+  "silenceTimeoutSeconds": 30,
+  "maxDurationSeconds": 600,
+  "systemPrompt": "You are SARA — the Voice OS co-pilot for a one-man business empire. Calm. Direct. Mission control.\n\nHARD RULES:\n- Maximum 15 words per response. Count them. Never exceed.\n- Every question requires a binary answer: yes or no.\n- No filler, no warmth, no enthusiasm, no apologies.\n- Confirm once, execute, report result. One cycle.\n- One question at a time. Never stack questions.\n\nThe caller is the Commander. Their words are orders.\n\nWORKFLOW:\n1. Hear the order.\n2. If unclear: \"Repeat order or say briefing?\"\n3. If clear: confirm in ≤10 words + \"Yes or no?\"\n4. On yes: call the tool. Report in ≤15 words.\n5. Always end with \"Next?\" unless Commander says goodbye.\n\nTOOLS — use silently, speak results only:\n- create_task — queue builds, research, work\n- get_briefing — status summary (compress to ≤15 words)\n- log_note / dump_to_vault — capture to Obsidian inbox\n- queue_decision — save for portal review\n- update_task — change task status\n- trigger_workflow — fire n8n automation\n\nBRIEFING FORMAT (spoken):\n\"[N] tasks. [N] decisions. Brief now?\"\n\nCANNOT DO (create a task instead):\n- Send email, make purchases, access accounts directly\n\nEXAMPLES:\nCommander: \"Log a note about competitor pricing\"\nSARA: \"Vault note: competitor pricing. Yes or no?\"\nCommander: \"Yes\"\nSARA: \"Logged. Next?\"\n\nCommander: \"Give me a briefing\"\nSARA: \"Three pending. Two decisions. Brief now?\"",
   "serverUrl": "https://YOUR-VPS-DOMAIN.com/vapi/webhook",
   "serverMessages": ["end-of-call-report", "status-update"],
   "tools": [
@@ -18,40 +24,33 @@
       "type": "function",
       "function": {
         "name": "create_task",
-        "description": "Create a new task or build request. Use when the commander wants something done, built, researched, or scheduled.",
+        "description": "Create a task. Only call after Commander confirms yes.",
         "parameters": {
           "type": "object",
           "properties": {
-            "title": { "type": "string", "description": "Short task title" },
-            "description": { "type": "string", "description": "Full details" },
-            "priority": {
-              "type": "string",
-              "enum": ["low", "normal", "high", "urgent"]
-            }
+            "title": { "type": "string" },
+            "description": { "type": "string" },
+            "priority": { "type": "string", "enum": ["low", "normal", "high", "urgent"] }
           },
           "required": ["title"]
         }
       },
-      "server": {
-        "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/create_task"
-      }
+      "server": { "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/create_task" }
     },
     {
       "type": "function",
       "function": {
         "name": "get_briefing",
-        "description": "Get a status briefing — tasks, decisions, activity.",
+        "description": "Get status. Speak result in 15 words or less.",
         "parameters": { "type": "object", "properties": {} }
       },
-      "server": {
-        "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/get_briefing"
-      }
+      "server": { "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/get_briefing" }
     },
     {
       "type": "function",
       "function": {
         "name": "queue_decision",
-        "description": "Queue a decision for review in the command center portal.",
+        "description": "Queue decision for portal. Confirm with Commander first.",
         "parameters": {
           "type": "object",
           "properties": {
@@ -62,54 +61,43 @@
           "required": ["title", "context"]
         }
       },
-      "server": {
-        "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/queue_decision"
-      }
+      "server": { "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/queue_decision" }
     },
     {
       "type": "function",
       "function": {
         "name": "update_task",
-        "description": "Update an existing task.",
+        "description": "Update task status.",
         "parameters": {
           "type": "object",
           "properties": {
             "task_id": { "type": "integer" },
-            "status": {
-              "type": "string",
-              "enum": ["pending", "in_progress", "completed", "blocked", "cancelled"]
-            },
+            "status": { "type": "string", "enum": ["pending", "in_progress", "completed", "blocked", "cancelled"] },
             "title": { "type": "string" }
           },
           "required": ["task_id"]
         }
       },
-      "server": {
-        "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/update_task"
-      }
+      "server": { "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/update_task" }
     },
     {
       "type": "function",
       "function": {
         "name": "log_note",
-        "description": "Log a note or idea. Saves to command center AND Obsidian vault inbox.",
+        "description": "Log note to vault inbox.",
         "parameters": {
           "type": "object",
-          "properties": {
-            "message": { "type": "string" }
-          },
+          "properties": { "message": { "type": "string" } },
           "required": ["message"]
         }
       },
-      "server": {
-        "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/log_note"
-      }
+      "server": { "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/log_note" }
     },
     {
       "type": "function",
       "function": {
         "name": "dump_to_vault",
-        "description": "Dump a structured note to Obsidian vault inbox with title and body.",
+        "description": "Structured vault dump with title and body.",
         "parameters": {
           "type": "object",
           "properties": {
@@ -119,15 +107,13 @@
           "required": ["title", "body"]
         }
       },
-      "server": {
-        "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/dump_to_vault"
-      }
+      "server": { "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/dump_to_vault" }
     },
     {
       "type": "function",
       "function": {
         "name": "trigger_workflow",
-        "description": "Trigger an n8n automation by event name.",
+        "description": "Trigger n8n workflow by event name.",
         "parameters": {
           "type": "object",
           "properties": {
@@ -137,9 +123,7 @@
           "required": ["event"]
         }
       },
-      "server": {
-        "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/trigger_workflow"
-      }
+      "server": { "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/trigger_workflow" }
     }
   ]
 }

@@ -50,7 +50,8 @@ A layered, self-owned system. Each layer does one job. You turn layers on as you
 | **AutoGen** | 4 | Multi-agent teams for complex work | ✅ Open source (add later) |
 | **Skyvern** | 4 | Browser automation (forms, sites) | ✅ Open source (add later) |
 | **Brave Search** | 1 | Web research when agents need it | ⚠️ External API (optional) |
-| **Vapi** | 5 | Voice phone interface | ⚠️ External (you own the number) |
+| **Vapi** | 5 | Voice phone interface | ⚠️ External (replace with LiveKit later) |
+| **LiveKit** | 5 | Self-hosted voice (Phase 2) | ✅ Open source |
 
 ## Data flow examples
 
