@@ -12,5 +12,6 @@ COPY app ./app
 RUN mkdir -p /app/data
 
 ENV DATABASE_URL=sqlite+aiosqlite:////app/data/command_center.db
+ENV VAULT_PATH=/app/vault
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

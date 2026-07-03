@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     portal_password: str = "change-me"
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
     public_base_url: str = "http://localhost:8000"
+    vault_path: str = "./vault"
+    n8n_webhook_base_url: str = ""
+    brave_search_api_key: str = ""
 
     @property
     def cors_origin_list(self) -> list[str]:

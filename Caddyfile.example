@@ -1,0 +1,40 @@
+your-domain.com {
+    # Command Center portal
+    handle / {
+        reverse_proxy portal:80
+    }
+
+    # Voice OS API
+    handle /api/* {
+        reverse_proxy api:8000
+    }
+    handle /auth/* {
+        reverse_proxy api:8000
+    }
+    handle /voice/* {
+        reverse_proxy api:8000
+    }
+    handle /vapi/* {
+        reverse_proxy api:8000
+    }
+    handle /vault/* {
+        reverse_proxy api:8000
+    }
+    handle /integrations/* {
+        reverse_proxy api:8000
+    }
+    handle /health {
+        reverse_proxy api:8000
+    }
+
+    # n8n (protect with basic auth in production)
+    handle /n8n/* {
+        uri strip_prefix /n8n
+        reverse_proxy n8n:5678
+    }
+
+    # n8n webhooks (Voice OS triggers these)
+    handle /webhook/* {
+        reverse_proxy n8n:5678
+    }
+}

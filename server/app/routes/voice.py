@@ -6,9 +6,11 @@ from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.integrations.n8n import trigger_n8n
 from app.models import Decision, Task, TaskPriority, TaskStatus, VoiceSession
 from app.schemas import TaskCreate
 from app.services import create_task, get_dashboard_stats, log_activity
+from app.vault import write_inbox_note
 
 router = APIRouter(prefix="/voice", tags=["voice-os"])
 
@@ -41,6 +43,16 @@ class LogNoteTool(BaseModel):
     message: str
 
 
+class DumpToVaultTool(BaseModel):
+    title: str
+    body: str
+
+
+class TriggerWorkflowTool(BaseModel):
+    event: str
+    payload: dict = Field(default_factory=dict)
+
+
 @router.post("/tools/create_task", response_model=VoiceToolResponse)
 async def tool_create_task(
     body: CreateTaskTool, db: AsyncSession = Depends(get_db)
@@ -59,6 +71,10 @@ async def tool_create_task(
             priority=priority_map.get(body.priority, TaskPriority.normal),
             source="voice",
         ),
+    )
+    await trigger_n8n(
+        "task-created",
+        {"task_id": task.id, "title": task.title, "priority": task.priority.value},
     )
     return VoiceToolResponse(
         success=True,
@@ -168,9 +184,64 @@ async def tool_log_note(
     body: LogNoteTool, db: AsyncSession = Depends(get_db)
 ) -> VoiceToolResponse:
     await log_activity(db, "voice_note", body.message)
+    title = body.message[:80] + ("..." if len(body.message) > 80 else "")
+    path = write_inbox_note(title, body.message, source="voice")
+    await log_activity(
+        db,
+        "vault_note_created",
+        f"Vault inbox: {path.name}",
+        {"path": path.name},
+    )
     return VoiceToolResponse(
         success=True,
-        message="Note logged to command center.",
+        message="Note logged to command center and Obsidian vault inbox.",
+        data={"vault_file": path.name},
+    )
+
+
+@router.post("/tools/dump_to_vault", response_model=VoiceToolResponse)
+async def tool_dump_to_vault(
+    body: DumpToVaultTool, db: AsyncSession = Depends(get_db)
+) -> VoiceToolResponse:
+    path = write_inbox_note(body.title, body.body, source="voice")
+    await log_activity(
+        db,
+        "vault_note_created",
+        f"Vault dump: {body.title}",
+        {"path": path.name},
+    )
+    await trigger_n8n(
+        "vault-inbox",
+        {"title": body.title, "path": path.name, "folder": "inbox"},
+    )
+    return VoiceToolResponse(
+        success=True,
+        message=f"Dumped to Obsidian vault inbox as {path.name}.",
+        data={"vault_file": path.name},
+    )
+
+
+@router.post("/tools/trigger_workflow", response_model=VoiceToolResponse)
+async def tool_trigger_workflow(
+    body: TriggerWorkflowTool, db: AsyncSession = Depends(get_db)
+) -> VoiceToolResponse:
+    result = await trigger_n8n(body.event, body.payload)
+    await log_activity(
+        db,
+        "n8n_trigger",
+        f"Workflow triggered: {body.event}",
+        {"event": body.event, "result": result},
+    )
+    if result.get("triggered"):
+        return VoiceToolResponse(
+            success=True,
+            message=f"Workflow '{body.event}' triggered.",
+            data=result,
+        )
+    return VoiceToolResponse(
+        success=False,
+        message=f"Could not trigger workflow '{body.event}'. {result.get('reason') or result.get('error', 'Unknown error')}",
+        data=result,
     )
 
 
@@ -250,7 +321,7 @@ async def tool_schema() -> dict:
                 "type": "function",
                 "function": {
                     "name": "log_note",
-                    "description": "Log a note, idea, or observation to the command center activity feed.",
+                    "description": "Log a note or idea. Saves to command center AND Obsidian vault inbox for agent processing.",
                     "parameters": {
                         "type": "object",
                         "properties": {
@@ -260,6 +331,38 @@ async def tool_schema() -> dict:
                     },
                 },
                 "server": {"url": "{{PUBLIC_BASE_URL}}/voice/tools/log_note"},
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "dump_to_vault",
+                    "description": "Dump a structured note to the Obsidian vault inbox with a title and body. Use for longer captures, research dumps, or brain dumps.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "title": {"type": "string"},
+                            "body": {"type": "string", "description": "Full note content"},
+                        },
+                        "required": ["title", "body"],
+                    },
+                },
+                "server": {"url": "{{PUBLIC_BASE_URL}}/voice/tools/dump_to_vault"},
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "trigger_workflow",
+                    "description": "Trigger an n8n automation workflow by event name. Use for starting research, processing queues, or custom automations.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "event": {"type": "string", "description": "Workflow event name, e.g. task-created, vault-inbox, research"},
+                            "payload": {"type": "object", "description": "Optional data to pass to the workflow"},
+                        },
+                        "required": ["event"],
+                    },
+                },
+                "server": {"url": "{{PUBLIC_BASE_URL}}/voice/tools/trigger_workflow"},
             },
         ]
     }

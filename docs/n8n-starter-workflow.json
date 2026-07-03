@@ -1,0 +1,66 @@
+{
+  "name": "Empire — Task Created",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "task-created",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-task-created",
+      "name": "Webhook — task-created",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "log",
+              "name": "log",
+              "value": "=New task #{{ $json.body.task_id }}: {{ $json.body.title }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-fields",
+      "name": "Parse payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "content": "## Next steps\n\nConnect this to:\n- Email notification\n- AutoGen worker (Phase 3)\n- Slack/Discord (optional)",
+        "height": 200,
+        "width": 300
+      },
+      "id": "sticky-note",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [650, 200]
+    }
+  ],
+  "connections": {
+    "Webhook — task-created": {
+      "main": [
+        [
+          {
+            "node": "Parse payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

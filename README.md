@@ -1,79 +1,93 @@
-# Command Center + Voice OS
+# Command Center + Voice OS — Sovereign Stack
 
-Your empire foundation: a **24/7 voice agent** you call from any phone, and a **command deck portal** you open when you have internet.
+A **self-owned, layered system** for running a one-man empire: voice command by phone, command deck by browser, markdown memory in Obsidian, workflows in n8n.
 
-## What this is
+## The stack at a glance
 
-| Component | Purpose |
-|-----------|---------|
-| **Voice OS** | Backend that Vapi calls into. Turns your voice commands into tasks, notes, and decisions. |
-| **Command Center** | Web portal showing tasks, decisions, voice call history, and activity. |
-| **Vapi Integration** | Connects your existing phone number to Voice OS tools. |
+| Layer | Components | Status |
+|-------|-----------|--------|
+| **0 — Infrastructure** | VPS, Docker, Postgres, HTTPS | Ready |
+| **1 — Tools** | Brave Search (optional, later) | Planned |
+| **2 — Memory** | Obsidian vault, Command DB | Built |
+| **3 — Orchestration** | Voice OS, n8n | Built |
+| **4 — Agents** | AutoGen, Skyvern | Planned (stubs ready) |
+| **5 — Interfaces** | Vapi voice, Command Center portal | Built |
 
-## Quick start (local dev)
+Full architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
-### Backend
-
-```bash
-cd server
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-mkdir -p ../data
-cp ../.env.example ../.env
-uvicorn app.main:app --reload --port 8000
-```
-
-### Portal
-
-```bash
-cd portal
-npm install
-npm run dev
-```
-
-Open http://localhost:5173 — login with credentials from `.env` (default: `commander` / `change-me`).
-
-## Deploy to VPS (24/7)
+## Quick start
 
 ```bash
 cp .env.example .env
-# Edit .env with your domain, passwords, secrets
+# Edit passwords, domain, n8n keys
 docker compose up -d
 ```
 
-- API: port 8000
-- Portal: port 3000
-- Put HTTPS in front (Caddy/nginx) — required for Vapi
+| Service | URL |
+|---------|-----|
+| Command Center portal | http://localhost:3000 |
+| Voice OS API | http://localhost:8000 |
+| n8n workflows | http://localhost:5678 |
+| Obsidian vault | `./vault/` folder |
 
-See [docs/VAPI_SETUP.md](docs/VAPI_SETUP.md) for connecting your Vapi number.
+## How the pieces connect
 
-## How you use it day-to-day
+```
+Phone call (Vapi)
+    → Voice OS (tasks, notes, briefings)
+        → Obsidian vault (markdown inbox)
+        → n8n webhooks (automations)
+            → Agents later (AutoGen, Skyvern, Brave)
 
-**At work (no phone, but can call):**
-1. Call your Vapi number
-2. Tell Voice OS what to build, research, or decide
-3. It creates tasks and logs everything
+Browser (when you have internet)
+    → Command Center portal (dashboard, decisions, activity)
+    → Obsidian app (synced vault notes)
+    → n8n UI (workflow management)
+```
 
-**When you have internet:**
-1. Open your Command Center portal
-2. See all voice sessions, pending tasks, decisions
-3. Make calls on what to approve or prioritize next
+## Voice commands (via Vapi)
+
+- *"Give me a briefing"* — status of tasks, decisions, activity
+- *"Create a task: build landing page, high priority"* — queues work + triggers n8n
+- *"Log a note: competitor launched new pricing"* — saves to vault inbox + activity log
+- *"Dump to vault: research ideas"* — structured note for agents to process later
+- *"Queue a decision: Stripe vs Square"* — waiting in portal for your review
+
+## Obsidian vault
+
+Notes land in `vault/inbox/`. Sync to your phone/laptop via Syncthing (recommended), Git, or Obsidian Sync.
+
+See [vault/README.md](vault/README.md)
+
+## Setup guides
+
+- [Vapi phone setup](docs/VAPI_SETUP.md)
+- [n8n workflow setup](docs/N8N_SETUP.md)
+- [Full architecture & roadmap](docs/ARCHITECTURE.md)
 
 ## Project structure
 
 ```
-server/          Voice OS API (FastAPI)
-portal/          Command Center web app (React)
-docs/            Vapi setup guide + assistant config
+server/           Voice OS API
+portal/           Command Center web app
+vault/            Obsidian markdown vault (your data)
+agents/           Future agent workers (AutoGen, Skyvern)
+docs/             Setup guides + workflow templates
 docker-compose.yml
 ```
 
-## Next phases (after foundation)
+## Sovereignty checklist
 
-- Worker agents that execute tasks from the queue
-- Email/SMS notifications when decisions need you
-- Approval flows for sensitive actions
-- CRM and payment integrations
+- All core services self-hosted on your VPS
+- Vault = plain markdown files you own
+- Open-source stack (Docker, Postgres, n8n, FastAPI, React)
+- External only where necessary: Vapi (voice), Brave Search (optional research)
+- This repo is infrastructure-as-code — fork it, open-source it, own it
 
-This repo is Phase 1: **voice in, visibility out, always on.**
+## Phases
+
+1. **Now** — Deploy foundation, connect Vapi, set up n8n webhooks, sync Obsidian
+2. **Next** — n8n automations for inbox processing, Syncthing, HTTPS
+3. **Later** — AutoGen + Skyvern + Brave Search agent layer
+
+Don't skip Phase 1. Solid foundation first, agents second.

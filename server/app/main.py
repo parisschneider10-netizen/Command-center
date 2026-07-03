@@ -6,8 +6,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.auth import router as auth_router
 from app.config import settings
 from app.database import init_db
+from app.routes.integrations import router as integrations_router
 from app.routes.portal import router as portal_router
 from app.routes.vapi import router as vapi_router
+from app.routes.vault import router as vault_router
 from app.routes.voice import router as voice_router
 
 
@@ -36,8 +38,21 @@ app.include_router(auth_router)
 app.include_router(portal_router)
 app.include_router(voice_router)
 app.include_router(vapi_router)
+app.include_router(vault_router)
+app.include_router(integrations_router)
 
 
 @app.get("/health")
 async def health() -> dict:
-    return {"status": "ok", "service": "command-center"}
+    from pathlib import Path
+
+    vault_ok = Path(settings.vault_path).exists()
+    return {
+        "status": "ok",
+        "service": "command-center",
+        "layers": {
+            "voice_os": True,
+            "vault": vault_ok,
+            "n8n_configured": bool(settings.n8n_webhook_base_url),
+        },
+    }

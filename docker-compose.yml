@@ -1,4 +1,46 @@
 services:
+  # ── Layer 0: Data store ──────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-empire}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-empire}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-empire}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Layer 3: Orchestration ───────────────────────────────
+  n8n:
+    image: n8nio/n8n:latest
+    ports:
+      - "5678:5678"
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${POSTGRES_DB:-empire}
+      DB_POSTGRESDB_USER: ${POSTGRES_USER:-empire}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD:-change-me-postgres}
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: ${N8N_PROTOCOL:-http}
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://localhost:5678}
+      GENERIC_TIMEZONE: ${TZ:-UTC}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-change-me-n8n-encryption-key}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Layer 3: Voice OS API ────────────────────────────────
   api:
     build: ./server
     ports:
@@ -6,8 +48,13 @@ services:
     env_file: .env
     volumes:
       - ./data:/app/data
+      - ./vault:/app/vault
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
+  # ── Layer 5: Command Center portal ─────────────────────
   portal:
     build: ./portal
     ports:
@@ -16,7 +63,7 @@ services:
       - api
     restart: unless-stopped
 
-  # Optional: expose via HTTPS with Caddy (uncomment when you have a domain)
+  # ── Layer 0: HTTPS reverse proxy (uncomment for production) ─
   # caddy:
   #   image: caddy:2-alpine
   #   ports:
@@ -28,6 +75,28 @@ services:
   #   depends_on:
   #     - api
   #     - portal
+  #     - n8n
+  #   restart: unless-stopped
+
+  # ── Layer 4: Agents (uncomment when ready) ───────────────
+  # autogen-worker:
+  #   build: ./agents/autogen
+  #   env_file: .env
+  #   volumes:
+  #     - ./vault:/app/vault
+  #   depends_on:
+  #     - api
+  #     - n8n
+  #   restart: unless-stopped
+  #
+  # skyvern:
+  #   image: skyvern/skyvern:latest
+  #   env_file: .env
+  #   depends_on:
+  #     - n8n
+  #   restart: unless-stopped
 
 volumes:
+  postgres_data:
+  n8n_data:
   caddy_data:
