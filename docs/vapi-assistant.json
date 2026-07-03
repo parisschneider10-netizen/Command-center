@@ -92,7 +92,7 @@
       "type": "function",
       "function": {
         "name": "log_note",
-        "description": "Log a note or idea to the command center.",
+        "description": "Log a note or idea. Saves to command center AND Obsidian vault inbox.",
         "parameters": {
           "type": "object",
           "properties": {
@@ -103,6 +103,42 @@
       },
       "server": {
         "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/log_note"
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "dump_to_vault",
+        "description": "Dump a structured note to Obsidian vault inbox with title and body.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "title": { "type": "string" },
+            "body": { "type": "string" }
+          },
+          "required": ["title", "body"]
+        }
+      },
+      "server": {
+        "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/dump_to_vault"
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "trigger_workflow",
+        "description": "Trigger an n8n automation by event name.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "event": { "type": "string" },
+            "payload": { "type": "object" }
+          },
+          "required": ["event"]
+        }
+      },
+      "server": {
+        "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/trigger_workflow"
       }
     }
   ]
