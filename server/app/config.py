@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     vault_path: str = "./vault"
     n8n_webhook_base_url: str = ""
     brave_search_api_key: str = ""
+    rentahuman_api_key: str = ""
+    commander_daily_budget_cap: float = 100.0
+    guardian_per_task_cap: float = 25.0
 
     @property
     def cors_origin_list(self) -> list[str]:

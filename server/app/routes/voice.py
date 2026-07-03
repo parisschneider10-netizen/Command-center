@@ -6,8 +6,9 @@ from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.escalation import create_escalation
 from app.integrations.n8n import trigger_n8n
-from app.models import Decision, Task, TaskPriority, TaskStatus, VoiceSession
+from app.models import Decision, EscalationLevel, Task, TaskPriority, TaskStatus, VoiceSession
 from app.schemas import TaskCreate
 from app.services import create_task, get_dashboard_stats, log_activity
 from app.vault import write_inbox_note
@@ -51,6 +52,17 @@ class DumpToVaultTool(BaseModel):
 class TriggerWorkflowTool(BaseModel):
     event: str
     payload: dict = Field(default_factory=dict)
+
+
+class EscalateToHumanTool(BaseModel):
+    title: str
+    description: str
+    budget: float | None = None
+
+
+class NuclearEscalationTool(BaseModel):
+    title: str
+    context: str
 
 
 @router.post("/tools/create_task", response_model=VoiceToolResponse)
@@ -245,6 +257,62 @@ async def tool_trigger_workflow(
     )
 
 
+@router.post("/tools/escalate_to_human", response_model=VoiceToolResponse)
+async def tool_escalate_to_human(
+    body: EscalateToHumanTool, db: AsyncSession = Depends(get_db)
+) -> VoiceToolResponse:
+    escalation = await create_escalation(
+        db,
+        title=body.title,
+        description=body.description,
+        level=EscalationLevel.human,
+        budget=body.budget,
+        nuclear_flag=False,
+        source="voice",
+    )
+    if escalation.level == EscalationLevel.commander:
+        return VoiceToolResponse(
+            success=True,
+            message="Over budget. Queued for Commander review. Not calling.",
+            data={"escalation_id": escalation.id, "level": "commander"},
+        )
+    await trigger_n8n(
+        "human-escalation",
+        {"escalation_id": escalation.id, "title": body.title},
+    )
+    return VoiceToolResponse(
+        success=True,
+        message="Human layer engaged. Commander not notified.",
+        data={"escalation_id": escalation.id, "level": "human"},
+    )
+
+
+@router.post("/tools/nuclear_escalation", response_model=VoiceToolResponse)
+async def tool_nuclear_escalation(
+    body: NuclearEscalationTool, db: AsyncSession = Depends(get_db)
+) -> VoiceToolResponse:
+    escalation = await create_escalation(
+        db,
+        title=body.title,
+        description=body.context,
+        level=EscalationLevel.commander,
+        nuclear_flag=True,
+        source="voice",
+    )
+    decision = Decision(
+        title=f"NUCLEAR: {body.title}",
+        context=body.context,
+        recommendation="Commander decision required — last resort escalation.",
+    )
+    db.add(decision)
+    await db.commit()
+    return VoiceToolResponse(
+        success=True,
+        message="Nuclear flag set. Queued for Commander portal review.",
+        data={"escalation_id": escalation.id, "level": "commander"},
+    )
+
+
 @router.get("/tools/schema")
 async def tool_schema() -> dict:
     """OpenAPI-style tool definitions for Vapi assistant configuration."""
@@ -363,6 +431,39 @@ async def tool_schema() -> dict:
                     },
                 },
                 "server": {"url": "{{PUBLIC_BASE_URL}}/voice/tools/trigger_workflow"},
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "escalate_to_human",
+                    "description": "Escalate to human layer (guardians or RentAHuman). Commander is NOT notified. Use when agents cannot handle.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "title": {"type": "string"},
+                            "description": {"type": "string"},
+                            "budget": {"type": "number", "description": "Max budget in USD"},
+                        },
+                        "required": ["title", "description"],
+                    },
+                },
+                "server": {"url": "{{PUBLIC_BASE_URL}}/voice/tools/escalate_to_human"},
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "nuclear_escalation",
+                    "description": "LAST RESORT ONLY. Queue decision for Commander. Use only for legal, large money, or explicit Commander request.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "title": {"type": "string"},
+                            "context": {"type": "string"},
+                        },
+                        "required": ["title", "context"],
+                    },
+                },
+                "server": {"url": "{{PUBLIC_BASE_URL}}/voice/tools/nuclear_escalation"},
             },
         ]
     }

@@ -18,7 +18,10 @@ A layered, self-owned system. Each layer does one job. You turn layers on as you
 │  Vapi (voice) · Command Center portal · Obsidian app    │
 ├─────────────────────────────────────────────────────────┤
 │  LAYER 4 — AGENTS (add when ready)                      │
-│  AutoGen (multi-agent reasoning) · Skyvern (browser)    │
+│  AutoGen · Skyvern · Hive workers                       │
+├─────────────────────────────────────────────────────────┤
+│  LAYER 3.5 — HUMAN LAYER                                │
+│  Guardians · RentAHuman · escalation pyramid            │
 ├─────────────────────────────────────────────────────────┤
 │  LAYER 3 — ORCHESTRATION                                │
 │  n8n workflows · Voice OS tools · webhooks              │
@@ -52,6 +55,8 @@ A layered, self-owned system. Each layer does one job. You turn layers on as you
 | **Brave Search** | 1 | Web research when agents need it | ⚠️ External API (optional) |
 | **Vapi** | 5 | Voice phone interface | ⚠️ External (replace with LiveKit later) |
 | **LiveKit** | 5 | Self-hosted voice (Phase 2) | ✅ Open source |
+| **RentAHuman** | 3.5 | On-demand humans for physical/judgment tasks | ⚠️ External API |
+| **Guardians** | 3.5 | Vetted humans acting within manifest | ✅ Your roster |
 
 ## Data flow examples
 

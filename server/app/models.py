@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Enum, Integer, String, Text
+from sqlalchemy import DateTime, Enum, Float, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -75,5 +75,55 @@ class Decision(Base):
     context: Mapped[str] = mapped_column(Text)
     recommendation: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class EscalationLevel(str, enum.Enum):
+    agent = "agent"
+    human = "human"
+    commander = "commander"
+
+
+class EscalationStatus(str, enum.Enum):
+    open = "open"
+    assigned = "assigned"
+    in_progress = "in_progress"
+    resolved = "resolved"
+    needs_commander = "needs_commander"
+
+
+class Guardian(Base):
+    __tablename__ = "guardians"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(128))
+    role: Mapped[str] = mapped_column(String(64), default="guardian")
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    rentahuman_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    max_per_task: Mapped[float] = mapped_column(Float, default=25.0)
+    is_active: Mapped[bool] = mapped_column(default=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class HumanEscalation(Base):
+    __tablename__ = "human_escalations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str] = mapped_column(Text)
+    level: Mapped[EscalationLevel] = mapped_column(
+        Enum(EscalationLevel), default=EscalationLevel.human
+    )
+    status: Mapped[EscalationStatus] = mapped_column(
+        Enum(EscalationStatus), default=EscalationStatus.open
+    )
+    task_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    guardian_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    rentahuman_bounty_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    budget: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nuclear_flag: Mapped[bool] = mapped_column(default=False)
+    source: Mapped[str] = mapped_column(String(64), default="system")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
