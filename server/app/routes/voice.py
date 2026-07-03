@@ -54,6 +54,12 @@ class TriggerWorkflowTool(BaseModel):
     payload: dict = Field(default_factory=dict)
 
 
+class IssueWillTool(BaseModel):
+    title: str
+    description: str | None = None
+    will_priority: int = Field(default=8, ge=1, le=10)
+
+
 class EscalateToHumanTool(BaseModel):
     title: str
     description: str
@@ -75,6 +81,7 @@ async def tool_create_task(
         "high": TaskPriority.high,
         "urgent": TaskPriority.urgent,
     }
+    will_map = {"low": 3, "normal": 5, "high": 7, "urgent": 9}
     task = await create_task(
         db,
         TaskCreate(
@@ -82,11 +89,16 @@ async def tool_create_task(
             description=body.description,
             priority=priority_map.get(body.priority, TaskPriority.normal),
             source="voice",
+            will_priority=will_map.get(body.priority, 5),
         ),
     )
     await trigger_n8n(
         "task-created",
         {"task_id": task.id, "title": task.title, "priority": task.priority.value},
+    )
+    await trigger_n8n(
+        "agent-queue",
+        {"task_id": task.id, "title": task.title, "will_priority": task.will_priority},
     )
     return VoiceToolResponse(
         success=True,
@@ -254,6 +266,33 @@ async def tool_trigger_workflow(
         success=False,
         message=f"Could not trigger workflow '{body.event}'. {result.get('reason') or result.get('error', 'Unknown error')}",
         data=result,
+    )
+
+
+@router.post("/tools/issue_will", response_model=VoiceToolResponse)
+async def tool_issue_will(
+    body: IssueWillTool, db: AsyncSession = Depends(get_db)
+) -> VoiceToolResponse:
+    """Commander's will — high priority task for competing agents."""
+    task = await create_task(
+        db,
+        TaskCreate(
+            title=body.title,
+            description=body.description,
+            priority=TaskPriority.urgent,
+            source="will",
+            will_priority=body.will_priority,
+            open_for_agents=True,
+        ),
+    )
+    await trigger_n8n(
+        "agent-queue",
+        {"task_id": task.id, "title": task.title, "will_priority": task.will_priority, "will": True},
+    )
+    return VoiceToolResponse(
+        success=True,
+        message=f"Will issued. Priority {task.will_priority}. Agents competing.",
+        data={"task_id": task.id, "will_priority": task.will_priority},
     )
 
 

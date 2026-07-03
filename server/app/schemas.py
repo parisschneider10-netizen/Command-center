@@ -10,6 +10,8 @@ class TaskCreate(BaseModel):
     description: str | None = None
     priority: TaskPriority = TaskPriority.normal
     source: str = "voice"
+    will_priority: int = 5
+    open_for_agents: bool = True
 
 
 class TaskUpdate(BaseModel):
@@ -26,6 +28,10 @@ class TaskOut(BaseModel):
     status: TaskStatus
     priority: TaskPriority
     source: str
+    open_for_agents: bool
+    claimed_by_agent_id: int | None
+    will_priority: int
+    blocked_reason: str | None
     created_at: datetime
     updated_at: datetime
 

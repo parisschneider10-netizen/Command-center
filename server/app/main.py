@@ -6,7 +6,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.auth import router as auth_router
 from app.config import settings
 from app.database import init_db
+from app.routes.a2a import router as a2a_router
+from app.routes.agents import router as agents_router
+from app.routes.comms import router as comms_router
 from app.routes.escalations import router as escalations_router
+from app.routes.treasury import router as treasury_router
 from app.routes.integrations import router as integrations_router
 from app.routes.portal import router as portal_router
 from app.routes.vapi import router as vapi_router
@@ -42,6 +46,10 @@ app.include_router(vapi_router)
 app.include_router(vault_router)
 app.include_router(integrations_router)
 app.include_router(escalations_router)
+app.include_router(agents_router)
+app.include_router(comms_router)
+app.include_router(treasury_router)
+app.include_router(a2a_router)
 
 
 @app.get("/health")
@@ -56,5 +64,7 @@ async def health() -> dict:
             "voice_os": True,
             "vault": vault_ok,
             "n8n_configured": bool(settings.n8n_webhook_base_url),
+            "comms_configured": bool(settings.comms_imap_host),
+            "agent_first": True,
         },
     }

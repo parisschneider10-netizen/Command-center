@@ -1,6 +1,8 @@
 # Human Layer — Escalation & Guardians
 
-The hive runs on agents first. Humans second. **You are the nuclear option — last call only.**
+The hive is **agent-first**. Agents do everything they can — without artificial limits. Humans are utilities for reputation, physical world, and hard walls agents cannot cross. **You are the nuclear option — last call only.**
+
+Humans do NOT gate what agents are allowed to try digitally. See [AGENT_FIRST.md](AGENT_FIRST.md).
 
 ## Escalation pyramid
 

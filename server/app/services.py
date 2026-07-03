@@ -31,6 +31,8 @@ async def create_task(db: AsyncSession, payload: TaskCreate) -> Task:
         description=payload.description,
         priority=payload.priority,
         source=payload.source,
+        will_priority=payload.will_priority,
+        open_for_agents=payload.open_for_agents,
     )
     db.add(task)
     await db.commit()

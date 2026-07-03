@@ -1,17 +1,22 @@
-# Command Center + Voice OS — Sovereign Stack
+# Command Center + Voice OS — Sovereign Empire
 
-A **self-owned, layered system** for running a one-man empire: voice command by phone, command deck by browser, markdown memory in Obsidian, workflows in n8n.
+A **self-owned, agent-first empire** for one person at scale: voice command, agent hive, sovereign comms, agent wallets, A2A commerce.
+
+**North star:** [docs/EMPIRE_VISION.md](docs/EMPIRE_VISION.md)
 
 ## The stack at a glance
 
 | Layer | Components | Status |
 |-------|-----------|--------|
 | **0 — Infrastructure** | VPS, Docker, Postgres, HTTPS | Ready |
-| **1 — Tools** | Brave Search (optional, later) | Planned |
-| **2 — Memory** | Obsidian vault, Command DB | Built |
-| **3 — Orchestration** | Voice OS, n8n | Built |
-| **4 — Agents** | AutoGen, Skyvern | Planned (stubs ready) |
-| **5 — Interfaces** | Vapi voice, Command Center portal | Built |
+| **1 — Tools** | Brave Search, payment rails (later) | Planned |
+| **2 — Memory** | Obsidian vault, Command DB, comms inbox | Built |
+| **3 — Orchestration** | Voice OS, n8n, agent competition queue | Built |
+| **3.5 — Human utility** | Guardians, RentAHuman (not agent gates) | Built |
+| **4 — Hive agents** | AutoGen, Skyvern, competing workers | Planned |
+| **4.5 — Treasury** | Agent wallets, spend ledger | Foundation |
+| **4.6 — A2A commerce** | Agent-to-agent business | Foundation |
+| **5 — Interfaces** | Vapi/SARA voice, Command Center portal | Built |
 
 Full architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
@@ -59,14 +64,24 @@ Notes land in `vault/inbox/`. Sync to your phone/laptop via Syncthing (recommend
 
 See [vault/README.md](vault/README.md)
 
+## What you're replacing forever
+
+| Consumer app | Empire layer |
+|--------------|--------------|
+| Gmail | [Comms layer](docs/COMMS_LAYER.md) — sovereign mail + agent inbox |
+| Banking apps (ops) | [Treasury layer](docs/TREASURY_LAYER.md) — agent wallets + ledger |
+| Manual everything | Agent hive + [A2A commerce](docs/A2A_COMMERCE.md) |
+
 ## Setup guides
 
-- [Vapi phone setup](docs/VAPI_SETUP.md) — Phase 1 (now)
-- [Voice stack & LiveKit migration](docs/VOICE_STACK.md) — Phase 2 (sovereign)
-- [Human layer & escalation pyramid](docs/HUMAN_LAYER.md)
-- [RentAHuman setup](docs/RENTAHUMAN_SETUP.md)
-- [n8n workflow setup](docs/N8N_SETUP.md)
-- [Full architecture & roadmap](docs/ARCHITECTURE.md)
+- [Empire vision (start here)](docs/EMPIRE_VISION.md)
+- [Agent-first philosophy](docs/AGENT_FIRST.md)
+- [Comms — Gmail replacement](docs/COMMS_LAYER.md)
+- [Treasury — agent wallets](docs/TREASURY_LAYER.md)
+- [A2A commerce](docs/A2A_COMMERCE.md)
+- [Human utility layer](docs/HUMAN_LAYER.md)
+- [Vapi + SARA voice](docs/VAPI_SETUP.md)
+- [Full architecture](docs/ARCHITECTURE.md)
 
 ## Project structure
 
@@ -89,8 +104,11 @@ docker-compose.yml
 
 ## Phases
 
-1. **Now** — Deploy foundation, connect Vapi, set up n8n webhooks, sync Obsidian
-2. **Next** — n8n automations for inbox processing, Syncthing, HTTPS
-3. **Later** — AutoGen + Skyvern + Brave Search agent layer
+1. **Now** — Deploy foundation, Vapi/SARA, agent queue, will manifest
+2. **Live** — Domain mail, comms API → Gmail retired
+3. **Money** — Treasury wallets, spend rules → banking apps for ops retired
+4. **Hive** — AutoGen/Skyvern competing on queue
+5. **A2A** — External agent commerce, revenue
+6. **Sovereign** — LiveKit, Stalwart mail, full self-host
 
-Don't skip Phase 1. Solid foundation first, agents second.
+Don't skip phases. Each goes live before the next.

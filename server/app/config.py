@@ -18,6 +18,16 @@ class Settings(BaseSettings):
     rentahuman_api_key: str = ""
     commander_daily_budget_cap: float = 100.0
     guardian_per_task_cap: float = 25.0
+    comms_imap_host: str = ""
+    comms_imap_port: int = 993
+    comms_imap_user: str = ""
+    comms_imap_password: str = ""
+    comms_smtp_host: str = ""
+    comms_smtp_port: int = 587
+    comms_smtp_user: str = ""
+    comms_smtp_password: str = ""
+    comms_from_name: str = "Commander"
+    comms_auto_send_routine: bool = True
 
     @property
     def cors_origin_list(self) -> list[str]:

@@ -15,22 +15,28 @@ A layered, self-owned system. Each layer does one job. You turn layers on as you
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  LAYER 5 — INTERFACES                                   │
-│  Vapi (voice) · Command Center portal · Obsidian app    │
+│  Vapi/SARA · Command Center portal · Obsidian app         │
 ├─────────────────────────────────────────────────────────┤
-│  LAYER 4 — AGENTS (add when ready)                      │
-│  AutoGen · Skyvern · Hive workers                       │
+│  LAYER 4.6 — A2A COMMERCE                               │
+│  Agent-to-agent business · allowlist · settlement       │
 ├─────────────────────────────────────────────────────────┤
-│  LAYER 3.5 — HUMAN LAYER                                │
-│  Guardians · RentAHuman · escalation pyramid            │
+│  LAYER 4.5 — TREASURY                                   │
+│  Agent wallets · spend ledger · no banking apps for ops │
+├─────────────────────────────────────────────────────────┤
+│  LAYER 4 — HIVE AGENTS                                  │
+│  AutoGen · Skyvern · competing workers                  │
+├─────────────────────────────────────────────────────────┤
+│  LAYER 3.5 — HUMAN UTILITY                              │
+│  Guardians · RentAHuman · physical/reputation only      │
 ├─────────────────────────────────────────────────────────┤
 │  LAYER 3 — ORCHESTRATION                                │
-│  n8n workflows · Voice OS tools · webhooks              │
+│  n8n · Voice OS · agent competition queue               │
 ├─────────────────────────────────────────────────────────┤
-│  LAYER 2 — MEMORY & STATE                               │
-│  Obsidian vault (notes) · Command DB (tasks/decisions)  │
+│  LAYER 2 — MEMORY & COMMS                               │
+│  Obsidian vault · Command DB · agent inbox (no Gmail)   │
 ├─────────────────────────────────────────────────────────┤
 │  LAYER 1 — TOOLS (external, optional)                   │
-│  Brave Search API · email · payments (later)            │
+│  Brave Search · payment rails · A2A networks            │
 ├─────────────────────────────────────────────────────────┤
 │  LAYER 0 — INFRASTRUCTURE                               │
 │  VPS · Docker · Postgres · HTTPS (Caddy)                │
@@ -56,7 +62,11 @@ A layered, self-owned system. Each layer does one job. You turn layers on as you
 | **Vapi** | 5 | Voice phone interface | ⚠️ External (replace with LiveKit later) |
 | **LiveKit** | 5 | Self-hosted voice (Phase 2) | ✅ Open source |
 | **RentAHuman** | 3.5 | On-demand humans for physical/judgment tasks | ⚠️ External API |
-| **Guardians** | 3.5 | Vetted humans acting within manifest | ✅ Your roster |
+| **Guardians** | 3.5 | Vetted humans for utility/reputation | ✅ Your roster |
+| **Agent wallets** | 4.5 | Per-agent spend limits, ledger | ✅ Foundation |
+| **A2A commerce** | 4.6 | Agent-to-agent business | ✅ Foundation |
+
+See [EMPIRE_VISION.md](EMPIRE_VISION.md) for the full north star.
 
 ## Data flow examples
 

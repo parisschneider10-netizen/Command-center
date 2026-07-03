@@ -39,6 +39,10 @@ class Task(Base):
         Enum(TaskPriority), default=TaskPriority.normal
     )
     source: Mapped[str] = mapped_column(String(64), default="voice")
+    open_for_agents: Mapped[bool] = mapped_column(default=True)
+    claimed_by_agent_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    will_priority: Mapped[int] = mapped_column(Integer, default=5)
+    blocked_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, onupdate=utcnow
@@ -75,6 +79,67 @@ class Decision(Base):
     context: Mapped[str] = mapped_column(Text)
     recommendation: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class AgentWorker(Base):
+    __tablename__ = "agent_workers"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(128), unique=True)
+    agent_type: Mapped[str] = mapped_column(String(64), default="custom")
+    capabilities: Mapped[str | None] = mapped_column(Text, nullable=True)
+    score: Mapped[int] = mapped_column(Integer, default=0)
+    wins: Mapped[int] = mapped_column(Integer, default=0)
+    losses: Mapped[int] = mapped_column(Integer, default=0)
+    is_active: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class EmailMessage(Base):
+    __tablename__ = "email_messages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    message_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    direction: Mapped[str] = mapped_column(String(16), default="inbound")
+    from_addr: Mapped[str] = mapped_column(String(255))
+    to_addr: Mapped[str] = mapped_column(String(255))
+    subject: Mapped[str] = mapped_column(String(512))
+    body_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(32), default="received")
+    agent_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    draft_reply: Mapped[str | None] = mapped_column(Text, nullable=True)
+    nuclear_flag: Mapped[bool] = mapped_column(default=False)
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class AgentWallet(Base):
+    __tablename__ = "agent_wallets"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    agent_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    name: Mapped[str] = mapped_column(String(128))
+    balance_cents: Mapped[int] = mapped_column(Integer, default=0)
+    daily_limit_cents: Mapped[int] = mapped_column(Integer, default=5000)
+    daily_spent_cents: Mapped[int] = mapped_column(Integer, default=0)
+    currency: Mapped[str] = mapped_column(String(8), default="USD")
+    is_active: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class TreasuryLedger(Base):
+    __tablename__ = "treasury_ledger"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    wallet_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    amount_cents: Mapped[int] = mapped_column(Integer)
+    direction: Mapped[str] = mapped_column(String(16))
+    description: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(32), default="pending")
+    counterparty: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    a2a_ref: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    nuclear_required: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 

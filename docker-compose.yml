@@ -78,6 +78,25 @@ services:
   #     - n8n
   #   restart: unless-stopped
 
+  # ── Comms dev (optional — catches outbound mail locally) ─
+  # mailpit:
+  #   image: axllent/mailpit:latest
+  #   ports:
+  #     - "8025:8025"
+  #     - "1025:1025"
+  #   restart: unless-stopped
+
+  # ── Sovereign mail (Phase 2 — uncomment when ready) ─────
+  # stalwart:
+  #   image: stalwartlabs/stalwart:latest
+  #   ports:
+  #     - "25:25"
+  #     - "587:587"
+  #     - "993:993"
+  #   volumes:
+  #     - stalwart_data:/var/lib/stalwart
+  #   restart: unless-stopped
+
   # ── Layer 4: Agents (uncomment when ready) ───────────────
   # autogen-worker:
   #   build: ./agents/autogen
@@ -100,3 +119,4 @@ volumes:
   postgres_data:
   n8n_data:
   caddy_data:
+  stalwart_data:
