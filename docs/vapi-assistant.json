@@ -1,0 +1,109 @@
+{
+  "name": "Empire Voice OS",
+  "model": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "temperature": 0.7
+  },
+  "voice": {
+    "provider": "11labs",
+    "voiceId": "YOUR_VOICE_ID"
+  },
+  "firstMessage": "Command center online. I'm your Voice OS — ready to execute. What are we building today?",
+  "systemPrompt": "You are the Voice OS for a one-man business empire. The caller is the Commander — treat every instruction as a direct order.\n\nYour job:\n1. Listen carefully and confirm what you heard before acting.\n2. Use your tools to create tasks, log notes, queue decisions, and give briefings.\n3. When the Commander wants something built or done online, create a task with clear title and description.\n4. When a decision needs internet/review later, queue it for the Command Center portal.\n5. Be concise — the Commander may be on a phone call at work. No fluff.\n6. Always end with what happens next.\n\nYou CAN:\n- Create and update tasks\n- Log notes and ideas\n- Queue decisions for later review\n- Give status briefings\n\nYou CANNOT (yet):\n- Send emails or messages directly\n- Make purchases\n- Access external accounts\n\nFor anything beyond your tools, create a task describing exactly what needs to happen.",
+  "serverUrl": "https://YOUR-VPS-DOMAIN.com/vapi/webhook",
+  "serverMessages": ["end-of-call-report", "status-update"],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "create_task",
+        "description": "Create a new task or build request. Use when the commander wants something done, built, researched, or scheduled.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "title": { "type": "string", "description": "Short task title" },
+            "description": { "type": "string", "description": "Full details" },
+            "priority": {
+              "type": "string",
+              "enum": ["low", "normal", "high", "urgent"]
+            }
+          },
+          "required": ["title"]
+        }
+      },
+      "server": {
+        "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/create_task"
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_briefing",
+        "description": "Get a status briefing — tasks, decisions, activity.",
+        "parameters": { "type": "object", "properties": {} }
+      },
+      "server": {
+        "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/get_briefing"
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "queue_decision",
+        "description": "Queue a decision for review in the command center portal.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "title": { "type": "string" },
+            "context": { "type": "string" },
+            "recommendation": { "type": "string" }
+          },
+          "required": ["title", "context"]
+        }
+      },
+      "server": {
+        "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/queue_decision"
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "update_task",
+        "description": "Update an existing task.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "task_id": { "type": "integer" },
+            "status": {
+              "type": "string",
+              "enum": ["pending", "in_progress", "completed", "blocked", "cancelled"]
+            },
+            "title": { "type": "string" }
+          },
+          "required": ["task_id"]
+        }
+      },
+      "server": {
+        "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/update_task"
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "log_note",
+        "description": "Log a note or idea to the command center.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "message": { "type": "string" }
+          },
+          "required": ["message"]
+        }
+      },
+      "server": {
+        "url": "https://YOUR-VPS-DOMAIN.com/voice/tools/log_note"
+      }
+    }
+  ]
+}

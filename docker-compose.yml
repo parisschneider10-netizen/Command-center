@@ -1,0 +1,33 @@
+services:
+  api:
+    build: ./server
+    ports:
+      - "8000:8000"
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  portal:
+    build: ./portal
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # Optional: expose via HTTPS with Caddy (uncomment when you have a domain)
+  # caddy:
+  #   image: caddy:2-alpine
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./Caddyfile:/etc/caddy/Caddyfile
+  #     - caddy_data:/data
+  #   depends_on:
+  #     - api
+  #     - portal
+
+volumes:
+  caddy_data:
