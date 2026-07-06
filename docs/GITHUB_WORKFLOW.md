@@ -1,6 +1,8 @@
 # Building From Work — GitHub + Voice + Cursor
 
-How you build the empire foundation while on the clock — without needing your phone or laptop open.
+> **Fast mode:** See [GITHUB_COMMAND.md](GITHUB_COMMAND.md) and [FAST_LAUNCH.md](FAST_LAUNCH.md).
+
+How you build the empire foundation while on the clock — GitHub Issues are the primary command channel.
 
 ## The loop (what actually works)
 

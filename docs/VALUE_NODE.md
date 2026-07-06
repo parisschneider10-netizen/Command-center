@@ -35,7 +35,9 @@ Answer these in `vault/commander/value-node-decision.md` before going live:
 5. **Revenue in 30 days realistic?** (honest, not hype)
 6. **Does it distract from foundation?** (if yes, defer)
 
-**Rule:** No value node goes live until foundation Phase 1 is deployed (Voice OS + portal + VPS).
+**Rule:** Foundation Phase 1 deployed OR Commander explicitly overrides in a GitHub Issue tagged `will`.
+
+Speed mode: pick niche in issue body, ship in 48h, iterate. Hire for fires.
 
 ## Candidate nodes (ranked for agent-first empires)
 

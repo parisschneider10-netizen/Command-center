@@ -81,7 +81,8 @@ See [vault/README.md](vault/README.md)
 - [A2A commerce](docs/A2A_COMMERCE.md)
 - [Human utility layer](docs/HUMAN_LAYER.md)
 - [Vapi + SARA voice](docs/VAPI_SETUP.md)
-- [Build from work (GitHub + voice)](docs/GITHUB_WORKFLOW.md)
+- [GitHub command channel (primary)](docs/GITHUB_COMMAND.md)
+- [Fast launch playbook](docs/FAST_LAUNCH.md)
 - [Value extraction node (income, deliberate)](docs/VALUE_NODE.md)
 
 ## Project structure
