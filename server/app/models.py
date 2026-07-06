@@ -144,6 +144,29 @@ class TreasuryLedger(Base):
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
+class ScrapedLead(Base):
+    """Property manager lead — STR recon / GHL SaaS expansion pipeline."""
+
+    __tablename__ = "scraped_leads"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(255))
+    phone: Mapped[str] = mapped_column(String(32), index=True)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    zip_code: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    city: Mapped[str] = mapped_column(String(128), index=True)
+    crisis_type: Mapped[str] = mapped_column(String(64), default="Unautomated-STR-Leak")
+    status: Mapped[str] = mapped_column(String(64), default="scraped")
+    servury_server_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    servury_ip: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    ghl_account_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
 class EscalationLevel(str, enum.Enum):
     agent = "agent"
     human = "human"

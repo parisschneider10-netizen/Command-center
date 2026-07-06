@@ -71,6 +71,16 @@ class NuclearEscalationTool(BaseModel):
     context: str
 
 
+class LockCityNodeTool(BaseModel):
+    name: str
+    phone: str
+    city: str
+    email: str | None = None
+    address: str | None = None
+    zip: str | None = None
+    dry_run: bool = True
+
+
 @router.post("/tools/create_task", response_model=VoiceToolResponse)
 async def tool_create_task(
     body: CreateTaskTool, db: AsyncSession = Depends(get_db)
@@ -349,6 +359,33 @@ async def tool_nuclear_escalation(
         success=True,
         message="Nuclear flag set. Queued for Commander portal review.",
         data={"escalation_id": escalation.id, "level": "commander"},
+    )
+
+
+@router.post("/tools/lock_city_node", response_model=VoiceToolResponse)
+async def tool_lock_city_node(
+    body: LockCityNodeTool, db: AsyncSession = Depends(get_db)
+) -> VoiceToolResponse:
+    from app.value_node.expansion import execute_city_lock
+
+    lead = {
+        "name": body.name,
+        "phone": body.phone,
+        "city": body.city,
+        "email": body.email,
+        "address": body.address,
+        "zip": body.zip,
+    }
+    result = await execute_city_lock(db, lead, dry_run=body.dry_run)
+    if result.get("success"):
+        msg = f"City node locked: {body.city}."
+        if result.get("dry_run"):
+            msg = f"Dry run OK: {body.city}. Set live in env to deploy."
+        return VoiceToolResponse(success=True, message=msg, data=result)
+    return VoiceToolResponse(
+        success=False,
+        message=f"Node lock failed: {body.city}.",
+        data=result,
     )
 
 

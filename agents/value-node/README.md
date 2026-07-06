@@ -1,24 +1,24 @@
-# Value Extraction Node
+# Value Extraction Node — STR Expansion
 
-**Status:** Decision required before code.
+**Status:** Integrated into Command Center.
 
-## Do not build until
+## Business
 
-1. [ ] Foundation deployed (Voice OS + portal on VPS)
-2. [ ] `vault/commander/value-node-decision.md` completed
-3. [ ] Rules added to `will-manifest.md`
+Property manager leads → Servury VPS + GHL sub-account per city → MTR recon SaaS revenue.
 
-## When approved
+See [docs/EXPANSION_NODE.md](../../docs/EXPANSION_NODE.md)
 
-This folder will contain:
+## Dry run
 
-- `workflow.json` — n8n export for the chosen node
-- `agent.py` — agent logic (lead qualify, API handler, etc.)
-- `Dockerfile` — optional worker container
+```bash
+cd agents/value-node
+python run_dry.py
+```
 
-## See
+Or via API: `POST /api/value-node/expansion/scale` with `"dry_run": true`
 
-- [docs/VALUE_NODE.md](../../docs/VALUE_NODE.md) — full design
-- [docs/GITHUB_WORKFLOW.md](../../docs/GITHUB_WORKFLOW.md) — build from work
+## Live deploy
 
-**No impulse launches.** One node. Manifest-governed.
+1. Set API keys in `.env`
+2. `EXPANSION_DRY_RUN=false`
+3. Start with `EXPANSION_LIVE_BATCH_CAP=1`, verify, scale up

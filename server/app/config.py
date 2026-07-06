@@ -28,6 +28,17 @@ class Settings(BaseSettings):
     comms_smtp_password: str = ""
     comms_from_name: str = "Commander"
     comms_auto_send_routine: bool = True
+    servury_api_key: str = ""
+    servury_api_url: str = "https://api.servury.com"
+    ghl_api_key: str = ""
+    ghl_api_url: str = "https://services.leadconnectorhq.com"
+    ghl_company_id: str = ""
+    ghl_mtr_recon_snapshot_id: str = ""
+    openai_api_key: str = ""
+    expansion_dry_run: bool = True
+    expansion_max_cities: int = 40
+    expansion_vps_cost_cents: int = 399
+    expansion_live_batch_cap: int = 5
 
     @property
     def cors_origin_list(self) -> list[str]:
