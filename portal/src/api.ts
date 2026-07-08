@@ -86,6 +86,39 @@ export interface Briefing {
   recent_activity: Activity[];
 }
 
+export interface CapabilitySnapshot {
+  empire: { tier: number; label: string; signals: Record<string, number> };
+  effective_rates: { ammo_percent: number; hold_hours: number };
+  liquidity: {
+    ammo_usd: number;
+    float_hold_usd: number;
+    total_deployable_usd: number;
+  };
+  ready_to_order: Array<{ id: number; name: string; category: string; capability: string }>;
+  affordable_now: Array<{ id: number; name: string; category: string; reason: string; remaining_usd: number }>;
+  next_unlocks: Array<{ id: number; name: string; funded_percent: number; remaining_usd: number }>;
+  recommended_actions: string[];
+  voice_summary: string;
+  how_to_add: { voice: string; api: string; portal: string };
+}
+
+export interface Acquisition {
+  id: number;
+  category: string;
+  name: string;
+  description: string | null;
+  target_cost_cents: number;
+  funded_cents: number;
+  status: string;
+  priority: number;
+  empire_tier: number;
+  equipment_spec: string | null;
+}
+
+export interface AcquisitionCategories {
+  categories: Record<string, string>;
+}
+
 export async function login(username: string, password: string) {
   const data = await request<{ access_token: string }>("/auth/login", {
     method: "POST",
@@ -100,4 +133,19 @@ export const api = {
   activity: () => request<Activity[]>("/api/activity"),
   decisions: () => request<Decision[]>("/api/decisions"),
   voiceSessions: () => request<VoiceSession[]>("/api/voice-sessions"),
+  capability: () => request<CapabilitySnapshot>("/api/treasury/capability"),
+  acquisitions: () => request<Acquisition[]>("/api/treasury/acquisitions"),
+  acquisitionCategories: () => request<AcquisitionCategories>("/api/treasury/acquisitions/categories"),
+  addAcquisition: (body: {
+    category: string;
+    name: string;
+    description?: string;
+    target_cost_cents?: number;
+    priority?: number;
+    empire_tier?: number;
+  }) =>
+    request<Acquisition>("/api/treasury/acquisitions", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 };

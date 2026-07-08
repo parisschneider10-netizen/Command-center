@@ -5,9 +5,9 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
 from app.models import TreasuryLedger
 from app.services import log_activity
+from app.treasury.empire import detect_empire_tier, effective_treasury_rates
 
 
 async def record_host_payment(
@@ -19,9 +19,11 @@ async def record_host_payment(
 ) -> TreasuryLedger:
     """
     Host pays upfront. Funds enter 48h hold before ground force / workers paid.
-    Float window = treasury_hold_hours (default 48).
+    Float window scales down as empire tier rises (more ammo, faster clear).
     """
-    release_at = datetime.now(timezone.utc) + timedelta(hours=settings.treasury_hold_hours)
+    empire = await detect_empire_tier(db)
+    rates = effective_treasury_rates(empire["tier"])
+    release_at = datetime.now(timezone.utc) + timedelta(hours=rates["hold_hours"])
     entry = TreasuryLedger(
         wallet_id=None,
         amount_cents=amount_cents,
@@ -39,7 +41,7 @@ async def record_host_payment(
         db,
         "host_payment_hold",
         f"${amount_cents / 100:.2f} held until {release_at.isoformat()}",
-        {"ledger_id": entry.id, "host_id": host_id, "float_hours": settings.treasury_hold_hours},
+        {"ledger_id": entry.id, "host_id": host_id, "float_hours": rates["hold_hours"]},
     )
     return entry
 
@@ -109,15 +111,21 @@ async def payout_worker(
 
 
 async def float_summary(db: AsyncSession) -> dict:
-    """Active fiat float in 48h hold window."""
+    """Active fiat float in hold window — scales with empire tier."""
+    empire = await detect_empire_tier(db)
+    rates = effective_treasury_rates(empire["tier"])
     result = await db.execute(
         select(TreasuryLedger).where(TreasuryLedger.status == "hold_48h")
     )
     holds = list(result.scalars().all())
     total = sum(h.amount_cents for h in holds)
+    projected_ammo = int(total * rates["ammo_percent"] / 100)
     return {
-        "hold_hours": settings.treasury_hold_hours,
+        "empire_tier": empire["tier"],
+        "hold_hours": rates["hold_hours"],
+        "ammo_percent": rates["ammo_percent"],
         "active_holds": len(holds),
         "float_cents": total,
         "float_usd": round(total / 100, 2),
+        "projected_ammo_on_clear_usd": round(projected_ammo / 100, 2),
     }

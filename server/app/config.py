@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     treasury_ammo_percent: int = 70
     treasury_ops_reserve_percent: int = 30
     treasury_auto_fund_acquisitions: bool = True
+    empire_tier_override: int = 0
 
     @property
     def cors_origin_list(self) -> list[str]:

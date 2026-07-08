@@ -18,6 +18,7 @@ from app.treasury.acquisitions import (
     update_acquisition,
 )
 from app.treasury.allocation import ammo_summary
+from app.treasury.capability import capability_snapshot
 from app.treasury.categories import ACQUISITION_CATEGORIES, DEFAULT_AMMO_WEIGHTS
 from app.treasury.service import request_spend
 
@@ -208,3 +209,12 @@ async def get_ammo(
     _: str = Depends(get_current_user),
 ) -> dict:
     return await ammo_summary(db)
+
+
+@router.get("/capability")
+async def get_capability(
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_user),
+) -> dict:
+    """What the empire can afford and unlock at current liquidity + tier."""
+    return await capability_snapshot(db)

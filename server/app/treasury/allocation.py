@@ -8,6 +8,7 @@ from app.models import AmmoAllocation, AmmoPool, TreasuryLedger
 from app.services import log_activity
 from app.treasury.acquisitions import auto_fund_top_priorities, ensure_ammo_pools
 from app.treasury.categories import DEFAULT_AMMO_WEIGHTS
+from app.treasury.empire import detect_empire_tier, effective_treasury_rates
 
 
 async def allocate_cleared_revenue(
@@ -29,7 +30,9 @@ async def allocate_cleared_revenue(
         return []
 
     total = ledger_entry.amount_cents
-    ammo_total = int(total * settings.treasury_ammo_percent / 100)
+    empire = await detect_empire_tier(db)
+    rates = effective_treasury_rates(empire["tier"])
+    ammo_total = int(total * rates["ammo_percent"] / 100)
     if ammo_total <= 0:
         return []
 
@@ -54,7 +57,7 @@ async def allocate_cleared_revenue(
             description=(
                 f"Ammo from {ledger_entry.description} "
                 f"(${ledger_entry.amount_cents / 100:.2f} inbound, "
-                f"{settings.treasury_ammo_percent}% ammo split)"
+                f"{rates['ammo_percent']}% ammo @ tier {empire['tier']})"
             ),
         )
         db.add(alloc)

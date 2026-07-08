@@ -95,13 +95,60 @@ Updated on: startup, acquisition create/update, manual manifest fetch.
 | `PATCH /api/treasury/acquisitions/{id}` | Update status, vendor research |
 | `POST /api/treasury/acquisitions/seed` | Seed default manifest (if empty) |
 | `GET /api/treasury/ammo` | Pool balances + recent allocations |
+| `GET /api/treasury/capability` | **What you can afford now** — liquidity, unlocks, tier |
 | `GET /api/treasury/overview` | Includes ammo balance + acquisition counts |
+
+## Adding items
+
+You can add targets three ways:
+
+| Channel | How |
+|---------|-----|
+| **Portal** | Empire tab → Add to Manifest form |
+| **Voice** | *"Add Starlink Mini to acquisition list, network category, priority 8"* |
+| **API** | `POST /api/treasury/acquisitions` |
+
+```json
+{
+  "category": "network",
+  "name": "Starlink Mini",
+  "target_cost_cents": 59900,
+  "priority": 8,
+  "empire_tier": 2,
+  "equipment_spec": "Portable sovereign uplink for mobile command"
+}
+```
+
+## Capability snapshot
+
+`GET /api/treasury/capability` answers: **at current liquidity, what can we buy or unlock?**
+
+Returns:
+- **ready_to_order** — fully funded, Commander can purchase
+- **affordable_now** — category pool covers remaining cost (or deploy-only)
+- **within_total_liquidity** — total deployable cash (ammo + float + reserve) covers it
+- **next_unlocks** — closest to funded, sorted by %
+- **float_projection** — ammo incoming when float clears
+
+## Float scales with empire tier
+
+As you expand (locked cities, hosts, revenue), treasury rates improve:
+
+| Tier | Label | Ammo % bonus | Hold reduction |
+|------|-------|--------------|----------------|
+| T1 | Bootstrap | +0% | 0h |
+| T2 | Regional | +5% | 0h |
+| T3 | Multi-city | +10% | -6h |
+| T4 | National | +15% | -12h |
+| T5 | Full sovereign | +20% | -24h |
+
+Tier auto-detected from locked cities, laundry hosts, ground missions, lifetime ammo. Override: `EMPIRE_TIER_OVERRIDE=3`.
 
 ## Voice (SARA)
 
 | Command | Tool |
 |---------|------|
-| *"Acquisition briefing"* / *"What ammo do we have?"* | `get_acquisition_briefing` |
+| *"Acquisition briefing"* / *"What can we afford?"* | `get_acquisition_briefing` (full capability snapshot) |
 | *"Add Starlink to acquisition list"* | `add_acquisition_need` |
 
 ## Agent workflow

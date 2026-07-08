@@ -404,18 +404,14 @@ async def tool_get_acquisition_briefing(
     db: AsyncSession = Depends(get_db),
 ) -> VoiceToolResponse:
     """Ammo pools, top sovereign acquisition priorities, funded-ready items."""
-    from app.treasury.acquisitions import acquisition_briefing
+    from app.treasury.capability import capability_snapshot
 
-    briefing = await acquisition_briefing(db)
-    top = briefing.get("top_priorities", [])
-    summary = (
-        f"Ammo balance ${briefing['ammo_balance_usd']:.2f}. "
-        f"{briefing['needed_count']} items needed, {briefing['funded_ready_count']} funded and ready."
+    snap = await capability_snapshot(db)
+    return VoiceToolResponse(
+        success=True,
+        message=snap["voice_summary"],
+        data=snap,
     )
-    if top:
-        names = ", ".join(t["name"] for t in top[:3])
-        summary += f" Top priorities: {names}."
-    return VoiceToolResponse(success=True, message=summary, data=briefing)
 
 
 @router.post("/tools/add_acquisition_need", response_model=VoiceToolResponse)
@@ -606,7 +602,7 @@ async def tool_schema() -> dict:
                 "type": "function",
                 "function": {
                     "name": "get_acquisition_briefing",
-                    "description": "Get sovereign acquisition status — ammo pools, top equipment needs, Starlink/network/compute priorities. Use when Commander asks about empire infrastructure or what to buy next.",
+                    "description": "Get what the empire can afford NOW — ammo, float, ready-to-order items, closest unlocks, capability gaps. Use when Commander asks what we can buy, afford, or unlock at current capacity.",
                     "parameters": {"type": "object", "properties": {}},
                 },
                 "server": {"url": "{{PUBLIC_BASE_URL}}/voice/tools/get_acquisition_briefing"},
