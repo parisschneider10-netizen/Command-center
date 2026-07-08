@@ -55,6 +55,7 @@ app.include_router(treasury_router)
 app.include_router(a2a_router)
 app.include_router(value_node_router)
 app.include_router(laundry_router)
+app.include_router(ground_force_router)
 
 
 @app.get("/health")

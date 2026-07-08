@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     expansion_max_cities: int = 40
     expansion_vps_cost_cents: int = 399
     expansion_live_batch_cap: int = 5
+    treasury_hold_hours: int = 48
 
     @property
     def cors_origin_list(self) -> list[str]:

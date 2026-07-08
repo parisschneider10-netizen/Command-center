@@ -140,6 +140,8 @@ class TreasuryLedger(Base):
     counterparty: Mapped[str | None] = mapped_column(String(255), nullable=True)
     a2a_ref: Mapped[str | None] = mapped_column(String(128), nullable=True)
     nuclear_required: Mapped[bool] = mapped_column(default=False)
+    release_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    linked_mission_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
@@ -197,6 +199,23 @@ class LaundryGuestRequest(Base):
     revenue_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class GroundForceMission(Base):
+    __tablename__ = "ground_force_missions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    mission_type: Mapped[str] = mapped_column(String(64))
+    title: Mapped[str] = mapped_column(String(255))
+    neighborhood: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    target_address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    pay_on_completion_cents: Mapped[int] = mapped_column(Integer, default=2500)
+    status: Mapped[str] = mapped_column(String(64), default="open")
+    rentahuman_bounty_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    host_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    proof_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class EscalationLevel(str, enum.Enum):
