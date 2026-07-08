@@ -72,6 +72,15 @@ See [vault/README.md](vault/README.md)
 | Banking apps (ops) | [Treasury layer](docs/TREASURY_LAYER.md) — agent wallets + ledger |
 | Manual everything | Agent hive + [A2A commerce](docs/A2A_COMMERCE.md) |
 
+## Parallel revenue (KC Laundry)
+
+**Same VPS. Same API. Money while you build.**
+
+[KC Laundry Play](docs/KC_LAUNDRY_PLAY.md) — World Cup + KC STR hosts + RentAHuman fulfillment.
+
+- `POST /api/laundry/host-signup` — Airbnb host lead
+- `POST /api/laundry/guest-request` — pickup → n8n → RentAHuman
+
 ## Setup guides
 
 - [Empire vision (start here)](docs/EMPIRE_VISION.md)

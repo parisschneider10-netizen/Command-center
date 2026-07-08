@@ -167,6 +167,38 @@ class ScrapedLead(Base):
     )
 
 
+class LaundryHost(Base):
+    __tablename__ = "laundry_hosts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(255))
+    phone: Mapped[str] = mapped_column(String(32), index=True)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    neighborhood: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    unit_count: Mapped[int] = mapped_column(Integer, default=1)
+    offers_luggage_valet: Mapped[bool] = mapped_column(default=False)
+    storage_units_available: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(64), default="lead")
+    ghl_contact_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class LaundryGuestRequest(Base):
+    __tablename__ = "laundry_guest_requests"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    host_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    guest_phone: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    pickup_address: Mapped[str] = mapped_column(Text)
+    service_type: Mapped[str] = mapped_column(String(64), default="laundry_turn")
+    status: Mapped[str] = mapped_column(String(64), default="requested")
+    rentahuman_bounty_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    revenue_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class EscalationLevel(str, enum.Enum):
     agent = "agent"
     human = "human"
