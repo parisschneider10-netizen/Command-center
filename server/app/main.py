@@ -10,6 +10,7 @@ from app.routes.a2a import router as a2a_router
 from app.routes.agents import router as agents_router
 from app.routes.comms import router as comms_router
 from app.routes.escalations import router as escalations_router
+from app.routes.bridge import router as bridge_router
 from app.routes.treasury import router as treasury_router
 from app.routes.integrations import router as integrations_router
 from app.routes.portal import router as portal_router
@@ -58,6 +59,7 @@ app.include_router(escalations_router)
 app.include_router(agents_router)
 app.include_router(comms_router)
 app.include_router(treasury_router)
+app.include_router(bridge_router)
 app.include_router(a2a_router)
 app.include_router(value_node_router)
 app.include_router(laundry_router)

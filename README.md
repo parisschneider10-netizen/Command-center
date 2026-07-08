@@ -69,6 +69,7 @@ See [vault/README.md](vault/README.md)
 | Consumer app | Empire layer |
 |--------------|--------------|
 | Gmail | [Comms layer](docs/COMMS_LAYER.md) — sovereign mail + agent inbox |
+| **Command from work** | [Communication bridge](docs/COMMUNICATION_BRIDGE.md) — GitHub + voice + email |
 | Banking apps (ops) | [Treasury layer](docs/TREASURY_LAYER.md) — agent wallets + ledger |
 | Manual everything | Agent hive + [A2A commerce](docs/A2A_COMMERCE.md) |
 

@@ -44,6 +44,8 @@ class Settings(BaseSettings):
     treasury_ops_reserve_percent: int = 30
     treasury_auto_fund_acquisitions: bool = True
     empire_tier_override: int = 0
+    bridge_webhook_secret: str = ""
+    bridge_allowed_senders: str = ""
 
     @property
     def cors_origin_list(self) -> list[str]:

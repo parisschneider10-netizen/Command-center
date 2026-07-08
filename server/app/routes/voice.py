@@ -446,6 +446,37 @@ async def tool_add_acquisition_need(
     )
 
 
+@router.post("/tools/get_bridge_status", response_model=VoiceToolResponse)
+async def tool_get_bridge_status() -> VoiceToolResponse:
+    """How to reach the hive — GitHub, voice, email commands. Use when Commander asks how to contact or command builds."""
+    from app.comms.email import comms_configured
+    from app.config import settings
+
+    lines = [
+        "Primary bridge: GitHub Issue with @cursor — works from phone now, no VPS needed.",
+    ]
+    if settings.public_base_url and "localhost" not in settings.public_base_url:
+        lines.append("Voice SARA and command deck portal are configured.")
+    else:
+        lines.append("Voice and portal need VPS deploy — use GitHub until then.")
+    if comms_configured():
+        lines.append("Email commands live — send [BUILD] subject to commander mail.")
+    else:
+        lines.append("Email commands need sovereign mail in dot env — not Gmail to Cursor.")
+    lines.append("Do not connect Gmail to Cursor. Forward to commander mail or use GitHub.")
+    return VoiceToolResponse(
+        success=True,
+        message=" ".join(lines),
+        data={
+            "github_primary": True,
+            "voice_live": bool(settings.public_base_url),
+            "email_commands": comms_configured(),
+            "gmail_to_cursor": False,
+            "doc": "docs/COMMUNICATION_BRIDGE.md",
+        },
+    )
+
+
 @router.get("/tools/schema")
 async def tool_schema() -> dict:
     """OpenAPI-style tool definitions for Vapi assistant configuration."""
@@ -627,6 +658,15 @@ async def tool_schema() -> dict:
                     },
                 },
                 "server": {"url": "{{PUBLIC_BASE_URL}}/voice/tools/add_acquisition_need"},
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_bridge_status",
+                    "description": "How to command the empire from work — GitHub Issues, voice, email. Use when Commander asks how to reach agents, connect Gmail, or build before command deck is online.",
+                    "parameters": {"type": "object", "properties": {}},
+                },
+                "server": {"url": "{{PUBLIC_BASE_URL}}/voice/tools/get_bridge_status"},
             },
         ]
     }
