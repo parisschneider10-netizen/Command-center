@@ -91,6 +91,11 @@ class AddAcquisitionNeedTool(BaseModel):
     empire_tier: int = Field(default=1, ge=1, le=5)
 
 
+class StateIntentTool(BaseModel):
+    intent: str = Field(min_length=3)
+    auto_execute: bool = False
+
+
 @router.post("/tools/create_task", response_model=VoiceToolResponse)
 async def tool_create_task(
     body: CreateTaskTool, db: AsyncSession = Depends(get_db)
@@ -477,6 +482,34 @@ async def tool_get_bridge_status() -> VoiceToolResponse:
     )
 
 
+@router.post("/tools/state_intent", response_model=VoiceToolResponse)
+async def tool_state_intent(
+    body: StateIntentTool, db: AsyncSession = Depends(get_db)
+) -> VoiceToolResponse:
+    """
+    Commander states intent → plan + direction + human life force from treasury.
+  Optional auto_execute posts RentAHuman micro-tasks and queues hive.
+    """
+    from app.intent.engine import execute_intent, intent_briefing, plan_intent
+
+    intent = await plan_intent(db, intent_text=body.intent, source="voice")
+    briefing = await intent_briefing(db, intent.id)
+    direction = briefing.get("direction", "")
+    treasury = briefing.get("treasury", {})
+    human = treasury.get("human_life_force", {})
+    msg = direction
+    if human.get("voice_summary"):
+        msg += " " + human["voice_summary"]
+    if body.auto_execute:
+        ex = await execute_intent(db, intent.id)
+        msg += f" Executing: {len(ex.get('outcomes', []))} micro-tasks queued."
+    return VoiceToolResponse(
+        success=True,
+        message=msg,
+        data={**briefing, "intent_id": intent.id},
+    )
+
+
 @router.get("/tools/schema")
 async def tool_schema() -> dict:
     """OpenAPI-style tool definitions for Vapi assistant configuration."""
@@ -667,6 +700,22 @@ async def tool_schema() -> dict:
                     "parameters": {"type": "object", "properties": {}},
                 },
                 "server": {"url": "{{PUBLIC_BASE_URL}}/voice/tools/get_bridge_status"},
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "state_intent",
+                    "description": "Commander states intent/goal. Returns plan, direction, treasury human life force capacity, micro-tasks. Set auto_execute true to auto-post RentAHuman gigs and queue hive without Commander pressing buttons.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "intent": {"type": "string", "description": "What you want, e.g. deploy command deck, start KC laundry play"},
+                            "auto_execute": {"type": "boolean", "description": "If true, hive + human firewall execute immediately"},
+                        },
+                        "required": ["intent"],
+                    },
+                },
+                "server": {"url": "{{PUBLIC_BASE_URL}}/voice/tools/state_intent"},
             },
         ]
     }

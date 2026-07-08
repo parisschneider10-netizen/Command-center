@@ -1,13 +1,14 @@
 """What the empire can afford right now — capability snapshot."""
 
-from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import AmmoPool, SovereignAcquisition, TreasuryLedger
+from app.models import SovereignAcquisition
 from app.treasury.acquisitions import list_acquisitions
 from app.treasury.categories import ACQUISITION_CATEGORIES
 from app.treasury.empire import detect_empire_tier, effective_treasury_rates
 from app.treasury.float import float_summary
+from app.treasury.human_capital import human_life_force_snapshot
+from app.treasury.liquidity import liquidity_snapshot
 
 CAPABILITY_BY_CATEGORY = {
     "compute": "Deploy city nodes, n8n HA, agent workers",
@@ -45,49 +46,6 @@ def _acq_payload(acq: SovereignAcquisition, *, extra: dict | None = None) -> dic
     if extra:
         base.update(extra)
     return base
-
-
-async def liquidity_snapshot(db: AsyncSession) -> dict:
-    """All deployable capital: ammo pools + float + cleared inbound reserve."""
-    pools = list((await db.execute(select(AmmoPool))).scalars().all())
-    ammo_cents = sum(p.balance_cents for p in pools)
-    pool_by_cat = {p.category: p.balance_cents for p in pools}
-
-    float_data = await float_summary(db)
-    float_cents = float_data["float_cents"]
-
-    cleared_cents = await db.scalar(
-        select(func.coalesce(func.sum(TreasuryLedger.amount_cents), 0))
-        .where(
-            TreasuryLedger.direction == "inbound",
-            TreasuryLedger.status == "cleared",
-        )
-    ) or 0
-
-    disbursed_from_cleared = await db.scalar(
-        select(func.coalesce(func.sum(TreasuryLedger.amount_cents), 0))
-        .where(
-            TreasuryLedger.direction == "outbound",
-            TreasuryLedger.status == "disbursed",
-        )
-    ) or 0
-
-    # Approximate ops reserve still available (cleared minus paid out)
-    cleared_reserve = max(0, cleared_cents - disbursed_from_cleared)
-    total_deployable = ammo_cents + float_cents + cleared_reserve
-
-    return {
-        "ammo_cents": ammo_cents,
-        "ammo_usd": round(ammo_cents / 100, 2),
-        "float_hold_cents": float_cents,
-        "float_hold_usd": float_data["float_usd"],
-        "float_active_holds": float_data["active_holds"],
-        "cleared_reserve_cents": cleared_reserve,
-        "cleared_reserve_usd": round(cleared_reserve / 100, 2),
-        "total_deployable_cents": total_deployable,
-        "total_deployable_usd": round(total_deployable / 100, 2),
-        "pool_by_category": pool_by_cat,
-    }
 
 
 async def capability_snapshot(db: AsyncSession) -> dict:
@@ -169,10 +127,15 @@ async def capability_snapshot(db: AsyncSession) -> dict:
     if not recommended:
         recommended.append("Revenue nodes active — first host payment will seed ammo pools")
 
+    human_force = await human_life_force_snapshot(db)
+    caps = human_force["capacity"]
+    recommended.extend(human_force.get("recommendations", []))
+
     voice_summary = (
         f"Empire tier {tier} {empire['label']}. "
         f"Ammo ${liquidity['ammo_usd']:.2f}, float ${liquidity['float_hold_usd']:.2f}, "
-        f"total deployable ${liquidity['total_deployable_usd']:.2f}. "
+        f"deployable ${liquidity['total_deployable_usd']:.2f}. "
+        f"Human life force: {caps['standard_gigs_35_usd']} standard gigs at $35. "
     )
     if ready_to_order:
         voice_summary += f"Ready to order: {ready_to_order[0]['name']}. "
@@ -203,6 +166,7 @@ async def capability_snapshot(db: AsyncSession) -> dict:
             "hold_hours": rates["hold_hours"],
             "ammo_percent_at_tier": rates["ammo_percent"],
         },
+        "human_life_force": human_force,
         "recommended_actions": recommended,
         "voice_summary": voice_summary.strip(),
         "how_to_add": {

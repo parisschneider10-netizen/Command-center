@@ -211,6 +211,17 @@ async def get_ammo(
     return await ammo_summary(db)
 
 
+@router.get("/human-capital")
+async def treasury_human_capital(
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_user),
+) -> dict:
+    """Float → human life force: how many gigs/guardians deployable cash supports."""
+    from app.treasury.human_capital import human_life_force_snapshot
+
+    return await human_life_force_snapshot(db)
+
+
 @router.get("/capability")
 async def get_capability(
     db: AsyncSession = Depends(get_db),

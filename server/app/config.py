@@ -46,6 +46,8 @@ class Settings(BaseSettings):
     empire_tier_override: int = 0
     bridge_webhook_secret: str = ""
     bridge_allowed_senders: str = ""
+    human_firewall_size: int = 3
+    intent_auto_post_rah: bool = True
 
     @property
     def cors_origin_list(self) -> list[str]:

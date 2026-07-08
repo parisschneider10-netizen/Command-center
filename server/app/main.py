@@ -10,6 +10,7 @@ from app.routes.a2a import router as a2a_router
 from app.routes.agents import router as agents_router
 from app.routes.comms import router as comms_router
 from app.routes.escalations import router as escalations_router
+from app.routes.intent import router as intent_router
 from app.routes.bridge import router as bridge_router
 from app.routes.treasury import router as treasury_router
 from app.routes.integrations import router as integrations_router
@@ -31,6 +32,9 @@ async def lifespan(app: FastAPI):
     async with SessionLocal() as db:
         await seed_default_acquisitions(db)
         await sync_manifest_to_vault(db)
+        from app.intent.engine import ensure_judgment_rules
+
+        await ensure_judgment_rules(db)
     yield
 
 
@@ -60,6 +64,7 @@ app.include_router(agents_router)
 app.include_router(comms_router)
 app.include_router(treasury_router)
 app.include_router(bridge_router)
+app.include_router(intent_router)
 app.include_router(a2a_router)
 app.include_router(value_node_router)
 app.include_router(laundry_router)

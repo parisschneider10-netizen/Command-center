@@ -299,6 +299,55 @@ class AmmoAllocation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class CommanderIntent(Base):
+    """Commander stated goal — system returns plan, hive + firewall execute."""
+
+    __tablename__ = "commander_intents"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    intent_text: Mapped[str] = mapped_column(Text)
+    source: Mapped[str] = mapped_column(String(64), default="commander")
+    status: Mapped[str] = mapped_column(String(32), default="planned")
+    template_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    plan_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    executed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class IntentMicroTask(Base):
+    """Decomposed micro-task from intent — agent, guardian, or RentAHuman."""
+
+    __tablename__ = "intent_micro_tasks"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    intent_id: Mapped[int] = mapped_column(Integer, index=True)
+    title: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    executor: Mapped[str] = mapped_column(String(32), default="agent")
+    budget_usd: Mapped[float | None] = mapped_column(Float, nullable=True)
+    will_priority: Mapped[int] = mapped_column(Integer, default=6)
+    status: Mapped[str] = mapped_column(String(32), default="planned")
+    tags: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    linked_task_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    linked_escalation_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    rentahuman_bounty_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class JudgmentRule(Base):
+    """What requires human judgment vs agent-only — Commander configures."""
+
+    __tablename__ = "judgment_rules"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    rule_key: Mapped[str] = mapped_column(String(64), unique=True)
+    label: Mapped[str] = mapped_column(String(255))
+    handler: Mapped[str] = mapped_column(String(32))
+    auto_post_rah: Mapped[bool] = mapped_column(default=False)
+    is_active: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class HumanEscalation(Base):
     __tablename__ = "human_escalations"
 

@@ -71,6 +71,7 @@ See [vault/README.md](vault/README.md)
 | Gmail | [Comms layer](docs/COMMS_LAYER.md) — sovereign mail + agent inbox |
 | **Command from work** | [Communication bridge](docs/COMMUNICATION_BRIDGE.md) — GitHub + voice + email |
 | **New to tech?** | [Beginner setup](docs/BEGINNER_SETUP.md) — Servury + GitHub step-by-step |
+| **Intent → plan → execute** | [Intent engine](docs/INTENT_ENGINE.md) — state goal, hive + firewall run |
 | Banking apps (ops) | [Treasury layer](docs/TREASURY_LAYER.md) — agent wallets + ledger |
 | Manual everything | Agent hive + [A2A commerce](docs/A2A_COMMERCE.md) |
 
