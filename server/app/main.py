@@ -15,6 +15,7 @@ from app.routes.integrations import router as integrations_router
 from app.routes.portal import router as portal_router
 from app.routes.vapi import router as vapi_router
 from app.routes.vault import router as vault_router
+from app.routes.ground_force import router as ground_force_router
 from app.routes.laundry import router as laundry_router
 from app.routes.value_node import router as value_node_router
 from app.routes.voice import router as voice_router
@@ -53,6 +54,7 @@ app.include_router(comms_router)
 app.include_router(treasury_router)
 app.include_router(a2a_router)
 app.include_router(value_node_router)
+app.include_router(laundry_router)
 
 
 @app.get("/health")

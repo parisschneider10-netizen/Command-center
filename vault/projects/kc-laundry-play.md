@@ -1,63 +1,22 @@
-# KC Laundry + Luggage Valet — Live Ops
+## Ground force (RentAHuman army)
 
-> Empire value node · Kansas City · World Cup window
+| Mission | Default pay | On completion |
+|---------|-------------|---------------|
+| host_visit | $35 | Signed host or QR agreement |
+| sticker_post | $20 | Photo proof per placement |
+| guerrilla_guest | $25 | 20+ QR cards + location report |
 
-## Status: PRE-LAUNCH
+**Rule:** Pay on completion only. Bounty via `POST /api/ground-force/deploy`.
 
-## Offers
+## 48-hour float
 
-### 1. Host Laundry Amenity
-- Host adds "Complimentary laundry" to Airbnb listing
-- Guest texts/calls → pickup → partner facility → return
-- Host pays: $______ per turn OR $______/month unlimited*
+- Host pays **upfront** (monthly package or per-turn prepay)
+- Treasury holds **48h** before worker payout
+- Float funds detergent bulk, VPS, APIs during hold
+- `GET /api/ground-force/float` — see active float
 
-### 2. Detergent supply (B2B)
-- Partner facilities buy bulk from us
-- Margin target: ______%
+## Sticker / guerrilla
 
-### 3. Luggage valet (Phase 2)
-- Guest storage between checkout and departure
-- Host paid: $______/day per unit space
-- Guest pays: $______/day
-
-## Partner facilities
-
-| Name | Contact | Address | Detergent supply? |
-|------|---------|---------|-------------------|
-| | | | |
-
-## Target hosts (first 20)
-
-| Host | Units | Neighborhood | Status | GHL ID |
-|------|-------|--------------|--------|--------|
-| | | | outreach | |
-
-## Pricing (edit live)
-
-| SKU | Price |
-|-----|-------|
-| Standard turn (2 bags) | $ |
-| Express (4hr) | $ |
-| Monthly host package | $ |
-| Luggage valet / day | $ |
-
-## RentAHuman bounty text (copy-paste)
-
-```
-Title: KC Laundry Pickup — {neighborhood}
-Pay: $20
-Task: Pick up 1-2 laundry bags from {address}. Deliver to {facility address}. 
-Confirm pickup and drop-off via text to {ops number}.
-```
-
-## Marketing hooks
-
-- World Cup guests expect hotel-level amenities
-- KC STR legal — new hosts need differentiation fast
-- "Free laundry" in listing title = click boost
-
-## Changelog
-
-| Date | Note |
-|------|------|
-| 2026-07-08 | Play created — parallel to empire build |
+- Approved host properties ONLY
+- QR → guest-request API
+- World Cup corridors — guest handouts
