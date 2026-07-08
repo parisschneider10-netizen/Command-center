@@ -24,6 +24,12 @@ from app.routes.voice import router as voice_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    from app.database import SessionLocal
+    from app.treasury.acquisitions import seed_default_acquisitions, sync_manifest_to_vault
+
+    async with SessionLocal() as db:
+        await seed_default_acquisitions(db)
+        await sync_manifest_to_vault(db)
     yield
 
 

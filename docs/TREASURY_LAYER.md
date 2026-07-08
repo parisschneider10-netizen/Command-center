@@ -104,8 +104,15 @@ Agents spend without you. Commander sees weekly treasury report in portal. Nucle
 
 ## Voice (SARA)
 
-- *"Treasury status"* → today's spend, pending approvals
+- *"Treasury status"* → today's spend, pending approvals, ammo balance
+- *"Acquisition briefing"* → sovereign equipment priorities, Starlink/network status
 - *"Approve spend 47"* → nuclear approval from phone (yes/no)
+
+## Sovereign acquisitions
+
+Revenue from every node (ground force, laundry, expansion) clears through treasury and becomes **ammo** for sovereign infrastructure. See [SOVEREIGN_ACQUISITIONS.md](SOVEREIGN_ACQUISITIONS.md).
+
+Living manifest: `vault/commander/sovereign-acquisitions.md`
 
 ## Security
 

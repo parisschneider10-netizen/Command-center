@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     expansion_vps_cost_cents: int = 399
     expansion_live_batch_cap: int = 5
     treasury_hold_hours: int = 48
+    treasury_ammo_percent: int = 70
+    treasury_ops_reserve_percent: int = 30
+    treasury_auto_fund_acquisitions: bool = True
 
     @property
     def cors_origin_list(self) -> list[str]:

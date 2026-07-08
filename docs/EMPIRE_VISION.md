@@ -69,6 +69,8 @@ Commander Treasury
 
 Every cent logged. Auto-approve under cap. Nuclear queue above cap.
 
+Cleared revenue becomes **ammo** for sovereign infrastructure — Starlink, compute, mail, physical ops. See [SOVEREIGN_ACQUISITIONS.md](SOVEREIGN_ACQUISITIONS.md).
+
 See [TREASURY_LAYER.md](TREASURY_LAYER.md).
 
 ## A2A business (agent-to-agent)

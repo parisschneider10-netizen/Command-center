@@ -246,6 +246,59 @@ class Guardian(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class SovereignAcquisition(Base):
+    """Equipment and infrastructure the empire must acquire — funded by revenue ammo."""
+
+    __tablename__ = "sovereign_acquisitions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    category: Mapped[str] = mapped_column(String(64), index=True)
+    name: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    equipment_spec: Mapped[str | None] = mapped_column(Text, nullable=True)
+    target_cost_cents: Mapped[int] = mapped_column(Integer, default=0)
+    funded_cents: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(32), default="needed")
+    priority: Mapped[int] = mapped_column(Integer, default=5)
+    empire_tier: Mapped[int] = mapped_column(Integer, default=1)
+    sovereign_required: Mapped[bool] = mapped_column(default=True)
+    vendor_candidates: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_node: Mapped[str] = mapped_column(String(64), default="treasury")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+    acquired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class AmmoPool(Base):
+    """Per-category ammo balance — revenue transformed into empire capability."""
+
+    __tablename__ = "ammo_pools"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    category: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    balance_cents: Mapped[int] = mapped_column(Integer, default=0)
+    allocated_total_cents: Mapped[int] = mapped_column(Integer, default=0)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
+class AmmoAllocation(Base):
+    """Ledger of revenue → ammo transformations."""
+
+    __tablename__ = "ammo_allocations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source_ledger_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    category: Mapped[str] = mapped_column(String(64), index=True)
+    amount_cents: Mapped[int] = mapped_column(Integer)
+    acquisition_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    description: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class HumanEscalation(Base):
     __tablename__ = "human_escalations"
 

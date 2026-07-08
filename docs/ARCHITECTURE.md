@@ -21,7 +21,8 @@ A layered, self-owned system. Each layer does one job. You turn layers on as you
 │  Agent-to-agent business · allowlist · settlement       │
 ├─────────────────────────────────────────────────────────┤
 │  LAYER 4.5 — TREASURY                                   │
-│  Agent wallets · spend ledger · no banking apps for ops │
+│  Agent wallets · spend ledger · revenue → ammo pools    │
+│  Sovereign acquisition manifest (Starlink, compute…)    │
 ├─────────────────────────────────────────────────────────┤
 │  LAYER 4 — HIVE AGENTS                                  │
 │  AutoGen · Skyvern · competing workers                  │

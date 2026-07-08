@@ -81,6 +81,16 @@ class LockCityNodeTool(BaseModel):
     dry_run: bool = True
 
 
+class AddAcquisitionNeedTool(BaseModel):
+    category: str
+    name: str
+    description: str | None = None
+    equipment_spec: str | None = None
+    target_cost_cents: int = Field(default=0, ge=0)
+    priority: int = Field(default=7, ge=1, le=10)
+    empire_tier: int = Field(default=1, ge=1, le=5)
+
+
 @router.post("/tools/create_task", response_model=VoiceToolResponse)
 async def tool_create_task(
     body: CreateTaskTool, db: AsyncSession = Depends(get_db)
@@ -389,6 +399,57 @@ async def tool_lock_city_node(
     )
 
 
+@router.post("/tools/get_acquisition_briefing", response_model=VoiceToolResponse)
+async def tool_get_acquisition_briefing(
+    db: AsyncSession = Depends(get_db),
+) -> VoiceToolResponse:
+    """Ammo pools, top sovereign acquisition priorities, funded-ready items."""
+    from app.treasury.acquisitions import acquisition_briefing
+
+    briefing = await acquisition_briefing(db)
+    top = briefing.get("top_priorities", [])
+    summary = (
+        f"Ammo balance ${briefing['ammo_balance_usd']:.2f}. "
+        f"{briefing['needed_count']} items needed, {briefing['funded_ready_count']} funded and ready."
+    )
+    if top:
+        names = ", ".join(t["name"] for t in top[:3])
+        summary += f" Top priorities: {names}."
+    return VoiceToolResponse(success=True, message=summary, data=briefing)
+
+
+@router.post("/tools/add_acquisition_need", response_model=VoiceToolResponse)
+async def tool_add_acquisition_need(
+    body: AddAcquisitionNeedTool, db: AsyncSession = Depends(get_db)
+) -> VoiceToolResponse:
+    """Add sovereign equipment or infrastructure to the acquisition manifest."""
+    from app.treasury.acquisitions import create_acquisition, sync_manifest_to_vault
+    from app.treasury.categories import ACQUISITION_CATEGORIES
+
+    if body.category not in ACQUISITION_CATEGORIES:
+        return VoiceToolResponse(
+            success=False,
+            message=f"Unknown category {body.category}. Valid: {', '.join(ACQUISITION_CATEGORIES)}.",
+        )
+    acq = await create_acquisition(
+        db,
+        category=body.category,
+        name=body.name,
+        description=body.description,
+        equipment_spec=body.equipment_spec,
+        target_cost_cents=body.target_cost_cents,
+        priority=body.priority,
+        empire_tier=body.empire_tier,
+        source_node="voice",
+    )
+    await sync_manifest_to_vault(db)
+    return VoiceToolResponse(
+        success=True,
+        message=f"Added to sovereign manifest: {acq.name} ({acq.category}).",
+        data={"acquisition_id": acq.id, "status": acq.status},
+    )
+
+
 @router.get("/tools/schema")
 async def tool_schema() -> dict:
     """OpenAPI-style tool definitions for Vapi assistant configuration."""
@@ -540,6 +601,36 @@ async def tool_schema() -> dict:
                     },
                 },
                 "server": {"url": "{{PUBLIC_BASE_URL}}/voice/tools/nuclear_escalation"},
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_acquisition_briefing",
+                    "description": "Get sovereign acquisition status — ammo pools, top equipment needs, Starlink/network/compute priorities. Use when Commander asks about empire infrastructure or what to buy next.",
+                    "parameters": {"type": "object", "properties": {}},
+                },
+                "server": {"url": "{{PUBLIC_BASE_URL}}/voice/tools/get_acquisition_briefing"},
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "add_acquisition_need",
+                    "description": "Add sovereign equipment or physical infrastructure to the acquisition manifest. Categories: compute, network, storage, comms, voice, security, physical_ops, energy.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "category": {"type": "string"},
+                            "name": {"type": "string"},
+                            "description": {"type": "string"},
+                            "equipment_spec": {"type": "string", "description": "State-of-the-art sovereign options to research"},
+                            "target_cost_cents": {"type": "integer"},
+                            "priority": {"type": "integer", "description": "1-10, higher = more urgent"},
+                            "empire_tier": {"type": "integer", "description": "1=startup through 5=full sovereign"},
+                        },
+                        "required": ["category", "name"],
+                    },
+                },
+                "server": {"url": "{{PUBLIC_BASE_URL}}/voice/tools/add_acquisition_need"},
             },
         ]
     }

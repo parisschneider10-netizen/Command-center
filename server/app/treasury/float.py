@@ -60,6 +60,10 @@ async def release_cleared_holds(db: AsyncSession) -> list[TreasuryLedger]:
         released.append(entry)
     if released:
         await db.commit()
+        from app.treasury.allocation import allocate_cleared_revenue
+
+        for entry in released:
+            await allocate_cleared_revenue(db, entry)
         await log_activity(
             db,
             "float_cleared",

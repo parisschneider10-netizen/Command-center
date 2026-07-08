@@ -52,6 +52,17 @@ Agents MUST NOT (escalate to nuclear queue, not phone Commander):
 - Inbox zero via agent triage
 - Vault inbox processed within 24h
 - Revenue-generating tasks prioritized over busywork
+- Cleared revenue → ammo pools → sovereign acquisition manifest (`vault/commander/sovereign-acquisitions.md`)
+
+## Sovereign acquisitions (treasury ammo)
+
+Agents MUST research state-of-the-art **sovereign** equipment for manifest items:
+- Network: Starlink + Peplink failover (no single-ISP dependency)
+- Compute: self-hosted VPS expansion (Servury)
+- Comms: sovereign mail (no Gmail dependency)
+- Physical: ground force kits, mobile command
+
+Update vendor candidates via API. Commander approves purchases when `funded`.
 
 ## Human utility (last resort for agents)
 
