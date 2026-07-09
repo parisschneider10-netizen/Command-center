@@ -48,6 +48,8 @@ class Settings(BaseSettings):
     bridge_allowed_senders: str = ""
     human_firewall_size: int = 3
     intent_auto_post_rah: bool = True
+    kcmo_max_units: int = 30
+    treasury_sales_close_hold_hours: int = 4
 
     @property
     def cors_origin_list(self) -> list[str]:

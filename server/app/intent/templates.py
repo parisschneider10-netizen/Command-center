@@ -60,9 +60,20 @@ KC_WELCOME_BASKET_TEMPLATE = {
     ],
 }
 
+KC_WORLD_CUP_BLITZ_TEMPLATE = {
+    "name": "kc_world_cup_blitz",
+    "phases": [
+        {"phase": 1, "title": "AI lead scrape", "owner": "agent", "detail": "POST /api/kc-blitz/leads/batch — 50 KCMO STR hosts"},
+        {"phase": 2, "title": "Dispatch closers", "owner": "human", "detail": "POST dispatch-all — RentAHuman $45 pay-on-close"},
+        {"phase": 3, "title": "Lock 30 units", "owner": "treasury", "detail": "Host pays $249 at door → 4h sales float → instant closer payout"},
+        {"phase": 4, "title": "Replicate", "owner": "agent", "detail": "Copy locked-host playbook to remaining pipeline units"},
+    ],
+}
+
 INTENT_MATCHERS: list[dict] = [
     {"keywords": ["deploy", "vps", "servury", "command deck", "online", "docker"], "template": DEPLOY_TEMPLATE},
     {"keywords": ["welcome basket", "basket", "new host", "welcome kit"], "template": KC_WELCOME_BASKET_TEMPLATE},
+    {"keywords": ["world cup", "blitz", "lock 30", "kcmo", "close sale"], "template": KC_WORLD_CUP_BLITZ_TEMPLATE},
     {"keywords": ["laundry", "kc", "host", "detergent", "world cup"], "template": KC_LAUNDRY_TEMPLATE},
     {"keywords": ["expand", "city", "str", "property manager", "ghl"], "template": EXPANSION_TEMPLATE},
     {"keywords": ["hire", "human", "help", "firewall", "guardian", "physical"], "template": HUMAN_HELP_TEMPLATE},
@@ -162,6 +173,34 @@ MICRO_TASK_LIBRARY: dict[str, list[dict]] = {
             "description": "Connect GHL form webhook to POST /api/laundry/host-signup",
             "executor": "agent",
             "will_priority": 8,
+        },
+    ],
+    "kc_world_cup_blitz": [
+        {
+            "title": "AI scrape KCMO STR host leads",
+            "description": "Bulk POST /api/kc-blitz/leads/batch — target 50 leads before World Cup week.",
+            "executor": "agent",
+            "will_priority": 10,
+        },
+        {
+            "title": "Dispatch closers to all new leads",
+            "description": "POST /api/kc-blitz/dispatch-all — host_close_sale $45 pay when host prepays at door.",
+            "executor": "rentahuman",
+            "budget_usd": 45.0,
+            "tags": ["kc-blitz", "host-close", "kcmo"],
+        },
+        {
+            "title": "GHL $249 Stripe link for closers at door",
+            "description": "Mobile payment link closers pull up on visit. Webhook → close-sale API.",
+            "executor": "agent",
+            "will_priority": 9,
+        },
+        {
+            "title": "Welcome basket crew per locked host",
+            "description": "Shop $22 + Assemble $20 + Deliver $18 after each close-sale lock.",
+            "executor": "rentahuman",
+            "budget_usd": 60.0,
+            "tags": ["welcome-basket", "kcmo"],
         },
     ],
     "kc_welcome_basket_play": [

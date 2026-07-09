@@ -142,6 +142,7 @@ class TreasuryLedger(Base):
     nuclear_required: Mapped[bool] = mapped_column(default=False)
     release_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     linked_mission_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    payment_category: Mapped[str | None] = mapped_column(String(32), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
@@ -235,6 +236,8 @@ class GroundForceMission(Base):
     rentahuman_bounty_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     host_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     proof_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    lead_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    host_payment_ledger_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
@@ -367,6 +370,43 @@ class JudgmentRule(Base):
     auto_post_rah: Mapped[bool] = mapped_column(default=False)
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class CityCap(Base):
+    """Per-city unit cap — KCMO World Cup blitz: 30 units max."""
+
+    __tablename__ = "city_caps"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    city_code: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    city_name: Mapped[str] = mapped_column(String(128))
+    max_units: Mapped[int] = mapped_column(Integer, default=30)
+    program: Mapped[str] = mapped_column(String(64), default="welcome_basket")
+    is_active: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class KcHostLead(Base):
+    """AI-scraped KC STR host lead — ground force closes sale on-site."""
+
+    __tablename__ = "kc_host_leads"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(255))
+    phone: Mapped[str] = mapped_column(String(32), index=True)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    neighborhood: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    listing_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    unit_count: Mapped[int] = mapped_column(Integer, default=1)
+    source: Mapped[str] = mapped_column(String(64), default="ai_scrape")
+    status: Mapped[str] = mapped_column(String(32), default="new")
+    mission_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    host_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    package_sku: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class HumanEscalation(Base):

@@ -68,6 +68,18 @@ MISSION_TEMPLATES = {
         "default_pay_cents": 1800,
         "tags": ["welcome-basket", "deliver", "kcmo"],
     },
+    "host_close_sale": {
+        "title": "KC HOST CLOSE — {neighborhood} (World Cup blitz)",
+        "description": (
+            "CLOSE SALE AT DOOR. Visit STR host at {address}. "
+            "Pitch welcome basket launch_5pack $249 (5 baskets) — ONLY {slots} slots left in KCMO. "
+            "Host MUST pay on your phone (Stripe/GHL link) BEFORE you leave. "
+            "Screenshot payment + photo with host. "
+            "PAY ON COMPLETION — instant payout when host prepay confirmed. $45."
+        ),
+        "default_pay_cents": 4500,
+        "tags": ["kc-blitz", "host-close", "sales", "kcmo"],
+    },
 }
 
 
@@ -91,9 +103,16 @@ async def deploy_mission(
 
     pay = pay_cents or template["default_pay_cents"]
     title = template["title"].format(neighborhood=neighborhood)
+    slots_note = "30"
+    if mission_type == "host_close_sale":
+        from app.value_node.kc_blitz import blitz_status
+
+        st = await blitz_status(db)
+        slots_note = str(st["slots_remaining"])
     description = template["description"].format(
         neighborhood=neighborhood,
         address=target_address or "see briefing",
+        slots=slots_note,
     )
 
     mission = GroundForceMission(

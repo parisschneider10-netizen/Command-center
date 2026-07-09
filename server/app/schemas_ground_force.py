@@ -4,7 +4,9 @@ from pydantic import BaseModel, Field
 
 
 class DeployMission(BaseModel):
-    mission_type: str = Field(description="host_visit | sticker_post | guerrilla_guest")
+    mission_type: str = Field(
+        description="host_visit | sticker_post | guerrilla_guest | host_close_sale"
+    )
     neighborhood: str
     target_address: str | None = None
     host_id: int | None = None

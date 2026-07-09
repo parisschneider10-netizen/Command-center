@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.models import TreasuryLedger
 from app.services import log_activity
 from app.treasury.empire import detect_empire_tier, effective_treasury_rates
@@ -16,23 +17,34 @@ async def record_host_payment(
     amount_cents: int,
     host_id: int,
     description: str,
+    hold_hours: int | None = None,
+    payment_category: str = "standard",
 ) -> TreasuryLedger:
     """
-    Host pays upfront. Funds enter 48h hold before ground force / workers paid.
-    Float window scales down as empire tier rises (more ammo, faster clear).
+    Host pays upfront. Funds enter hold before worker payout.
+    sales_close: 4h hold — ground force closer paid fast after on-site prepay.
     """
     empire = await detect_empire_tier(db)
     rates = effective_treasury_rates(empire["tier"])
-    release_at = datetime.now(timezone.utc) + timedelta(hours=rates["hold_hours"])
+    hours = hold_hours
+    if hours is None:
+        hours = (
+            settings.treasury_sales_close_hold_hours
+            if payment_category == "sales_close"
+            else rates["hold_hours"]
+        )
+    status = "hold_4h" if hours <= settings.treasury_sales_close_hold_hours else "hold_48h"
+    release_at = datetime.now(timezone.utc) + timedelta(hours=hours)
     entry = TreasuryLedger(
         wallet_id=None,
         amount_cents=amount_cents,
         direction="inbound",
         description=description,
-        status="hold_48h",
+        status=status,
         counterparty=f"host:{host_id}",
         release_at=release_at,
         nuclear_required=False,
+        payment_category=payment_category,
     )
     db.add(entry)
     await db.commit()
@@ -41,7 +53,7 @@ async def record_host_payment(
         db,
         "host_payment_hold",
         f"${amount_cents / 100:.2f} held until {release_at.isoformat()}",
-        {"ledger_id": entry.id, "host_id": host_id, "float_hours": rates["hold_hours"]},
+        {"ledger_id": entry.id, "host_id": host_id, "float_hours": hours, "category": payment_category},
     )
     return entry
 
@@ -51,7 +63,7 @@ async def release_cleared_holds(db: AsyncSession) -> list[TreasuryLedger]:
     now = datetime.now(timezone.utc)
     result = await db.execute(
         select(TreasuryLedger).where(
-            TreasuryLedger.status == "hold_48h",
+            TreasuryLedger.status.in_(("hold_48h", "hold_4h")),
             TreasuryLedger.release_at <= now,
         )
     )
@@ -82,10 +94,15 @@ async def payout_worker(
     worker_ref: str,
     from_ledger_id: int | None = None,
 ) -> TreasuryLedger:
-    """Pay RentAHuman worker after mission complete + hold cleared."""
+    """Pay worker after mission complete. Sales-close: instant if host prepaid at door."""
     if from_ledger_id:
         parent = await db.get(TreasuryLedger, from_ledger_id)
-        if not parent or parent.status not in ("cleared", "hold_48h"):
+        if not parent:
+            raise ValueError("Parent payment not found")
+        allowed = parent.status in ("cleared", "hold_48h", "hold_4h")
+        if parent.payment_category == "sales_close" and parent.status in ("hold_4h", "hold_48h"):
+            allowed = parent.amount_cents >= amount_cents
+        if not allowed:
             raise ValueError("Parent payment not cleared for payout")
 
     entry = TreasuryLedger(
@@ -115,7 +132,7 @@ async def float_summary(db: AsyncSession) -> dict:
     empire = await detect_empire_tier(db)
     rates = effective_treasury_rates(empire["tier"])
     result = await db.execute(
-        select(TreasuryLedger).where(TreasuryLedger.status == "hold_48h")
+        select(TreasuryLedger).where(TreasuryLedger.status.in_(("hold_48h", "hold_4h")))
     )
     holds = list(result.scalars().all())
     total = sum(h.amount_cents for h in holds)
