@@ -50,8 +50,19 @@ GENERIC_TEMPLATE = {
     ],
 }
 
+KC_WELCOME_BASKET_TEMPLATE = {
+    "name": "kc_welcome_basket_play",
+    "phases": [
+        {"phase": 1, "title": "Host prepay", "owner": "treasury", "detail": "GHL $249 → prepay API → 48h float"},
+        {"phase": 2, "title": "Agent lock SKU", "owner": "agent", "detail": "lock-spec Costco basket list"},
+        {"phase": 3, "title": "3-person crew", "owner": "human", "detail": "Shop $22 + Assemble $20 + Deliver $18 RAH"},
+        {"phase": 4, "title": "Laundry upsell", "owner": "agent", "detail": "QR in basket → laundry recurring"},
+    ],
+}
+
 INTENT_MATCHERS: list[dict] = [
     {"keywords": ["deploy", "vps", "servury", "command deck", "online", "docker"], "template": DEPLOY_TEMPLATE},
+    {"keywords": ["welcome basket", "basket", "new host", "welcome kit"], "template": KC_WELCOME_BASKET_TEMPLATE},
     {"keywords": ["laundry", "kc", "host", "detergent", "world cup"], "template": KC_LAUNDRY_TEMPLATE},
     {"keywords": ["expand", "city", "str", "property manager", "ghl"], "template": EXPANSION_TEMPLATE},
     {"keywords": ["hire", "human", "help", "firewall", "guardian", "physical"], "template": HUMAN_HELP_TEMPLATE},
@@ -136,6 +147,49 @@ MICRO_TASK_LIBRARY: dict[str, list[dict]] = {
             "description": "Review Commander intent against manifest. Execute within CAN list or escalate.",
             "executor": "guardian",
             "budget_usd": 0,
+        },
+    ],
+    "kc_laundry_play": [
+        {
+            "title": "KC host visit — pitch laundry amenity",
+            "description": "Visit STR host, pitch complimentary laundry. Photo proof. PAY ON COMPLETION.",
+            "executor": "rentahuman",
+            "budget_usd": 35.0,
+            "tags": ["ground-force", "host-visit", "kcmo"],
+        },
+        {
+            "title": "Wire GHL host signup to laundry API",
+            "description": "Connect GHL form webhook to POST /api/laundry/host-signup",
+            "executor": "agent",
+            "will_priority": 8,
+        },
+    ],
+    "kc_welcome_basket_play": [
+        {
+            "title": "GHL welcome basket page + $249 prepay link",
+            "description": "Landing page for launch_5pack. Webhook to POST /api/welcome-basket/host-signup + prepay.",
+            "executor": "agent",
+            "will_priority": 9,
+        },
+        {
+            "title": "Lock default KC basket spec for first host",
+            "description": "POST lock-spec with Costco SKU list. No shopping until locked.",
+            "executor": "agent",
+            "will_priority": 8,
+        },
+        {
+            "title": "KC Welcome Basket — Shop run",
+            "description": "Shop agent-locked list. Receipt photo. Commander may claim this gig.",
+            "executor": "rentahuman",
+            "budget_usd": 22.0,
+            "tags": ["welcome-basket", "shop", "kcmo"],
+        },
+        {
+            "title": "KC Welcome Basket — Assemble + Deliver crew",
+            "description": "Assembler $20 + Deliver $18. Photo proof in unit.",
+            "executor": "rentahuman",
+            "budget_usd": 38.0,
+            "tags": ["welcome-basket", "kcmo"],
         },
     ],
     "general_expansion": [

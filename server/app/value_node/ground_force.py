@@ -38,6 +38,36 @@ MISSION_TEMPLATES = {
         "default_pay_cents": 2500,
         "tags": ["ground-force", "guerrilla", "kcmo"],
     },
+    "basket_shop": {
+        "title": "KC Welcome Basket — Shop run",
+        "description": (
+            "Shop ONLY from agent-locked spec list (Costco/Sams). Receipt photo required. "
+            "Budget ~$16 supplies. Deliver items to assembler or meet point. "
+            "PAY ON COMPLETION — receipt + bag photo."
+        ),
+        "default_pay_cents": 2200,
+        "tags": ["welcome-basket", "shop", "kcmo"],
+    },
+    "basket_assemble": {
+        "title": "KC Welcome Basket — Assemble",
+        "description": (
+            "Assemble welcome basket per locked spec. Branded card + QR. "
+            "Photo of finished basket required. "
+            "PAY ON COMPLETION — assembly photo."
+        ),
+        "default_pay_cents": 2000,
+        "tags": ["welcome-basket", "assemble", "kcmo"],
+    },
+    "basket_deliver": {
+        "title": "KC Welcome Basket — Deliver to unit",
+        "description": (
+            "Place assembled basket inside STR unit at {address}. "
+            "Photo proof inside unit. Text host done. "
+            "PAY ON COMPLETION — placement photo."
+        ),
+        "default_pay_cents": 1800,
+        "tags": ["welcome-basket", "deliver", "kcmo"],
+    },
 }
 
 
@@ -117,6 +147,64 @@ async def deploy_mission(
         "rentahuman": bounty,
         "game_theory": "Worker paid on completion. Host pays upfront. 48h hold before disbursement.",
     }
+
+
+async def deploy_basket_crew(
+    db: AsyncSession,
+    *,
+    host_id: int,
+    neighborhood: str,
+    target_address: str | None,
+    basket_spec: str,
+    dry_run: bool = True,
+) -> list[dict]:
+    """3-person crew: shop ($22) + assemble ($20) + deliver ($18). Commander can claim shopper gig."""
+    spec_note = f"\n\nAGENT-LOCKED SPEC:\n{basket_spec[:2000]}"
+    results = []
+    for mission_type in ("basket_shop", "basket_assemble", "basket_deliver"):
+        template = MISSION_TEMPLATES[mission_type]
+        pay = template["default_pay_cents"]
+        title = template["title"].format(neighborhood=neighborhood)
+        description = template["description"].format(
+            neighborhood=neighborhood,
+            address=target_address or "host will confirm",
+        ) + spec_note
+        mission = GroundForceMission(
+            mission_type=mission_type,
+            title=title,
+            neighborhood=neighborhood,
+            target_address=target_address,
+            pay_on_completion_cents=pay,
+            host_id=host_id,
+            status="bounty_posted",
+        )
+        db.add(mission)
+        await db.commit()
+        await db.refresh(mission)
+        bounty = await create_bounty(
+            title=title,
+            description=description + f"\nMission ID: {mission.id}. Pay on photo proof.",
+            compensation=pay / 100,
+            location=f"Kansas City, MO — {neighborhood}",
+            tags=template["tags"],
+            dry_run=dry_run,
+        )
+        if bounty.get("ok") and bounty.get("data"):
+            mission.rentahuman_bounty_id = str(bounty["data"].get("id", ""))
+            await db.commit()
+        results.append(
+            {
+                "mission_type": mission_type,
+                "mission_id": mission.id,
+                "pay_cents": pay,
+                "rentahuman": bounty,
+            }
+        )
+    await trigger_n8n(
+        "welcome-basket-crew",
+        {"host_id": host_id, "missions": [r["mission_id"] for r in results]},
+    )
+    return results
 
 
 async def complete_mission(

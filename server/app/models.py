@@ -183,7 +183,28 @@ class LaundryHost(Base):
     storage_units_available: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[str] = mapped_column(String(64), default="lead")
     ghl_contact_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    welcome_basket_credits: Mapped[int] = mapped_column(Integer, default=0)
+    prepaid_balance_cents: Mapped[int] = mapped_column(Integer, default=0)
+    locked_basket_spec: Mapped[str | None] = mapped_column(Text, nullable=True)
+    program: Mapped[str] = mapped_column(String(64), default="laundry")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class WelcomeBasketFulfillment(Base):
+    """One welcome basket cycle — host prepaid, agents lock spec, humans fulfill."""
+
+    __tablename__ = "welcome_basket_fulfillments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    host_id: Mapped[int] = mapped_column(Integer, index=True)
+    basket_spec: Mapped[str] = mapped_column(Text)
+    revenue_cents: Mapped[int] = mapped_column(Integer, default=0)
+    labor_budget_cents: Mapped[int] = mapped_column(Integer, default=6000)
+    status: Mapped[str] = mapped_column(String(32), default="planned")
+    shop_mission_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    deliver_mission_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class LaundryGuestRequest(Base):
