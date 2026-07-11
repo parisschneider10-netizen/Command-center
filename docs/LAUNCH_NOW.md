@@ -179,4 +179,15 @@ Weekend         → Dispatch closers, lock sandbox units
 
 You command. I build on GitHub. VPS runs empire. Treasury funds expansion instantly.
 
-See [GITHUB_COMMAND.md](GITHUB_COMMAND.md) · [BEGINNER_SETUP.md](BEGINNER_SETUP.md) · [SOVEREIGN_STAY_PLAY.md](SOVEREIGN_STAY_PLAY.md)
+## Empire Doctor (24/7 preventive layer)
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/doctor/status` | Warp-speed clear? Critical vs warnings |
+| `POST /api/doctor/scan` | Auto-repair vault/rules/float + escalate to firewall |
+
+**n8n cron (after deploy):** every 5 min → `POST http://YOUR_IP:8000/api/doctor/scan` with portal auth.
+
+Doctor escalates **critical** issues to human firewall. Warnings (no RAH key, localhost URL) don't stop warpspeed — they log only.
+
+See [INTENT_ENGINE.md](INTENT_ENGINE.md) for human firewall + judgment rules.

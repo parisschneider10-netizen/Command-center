@@ -77,7 +77,8 @@ Included in `GET /api/treasury/capability` as `human_life_force`.
 | `POST /api/intent` `{ "auto_execute": true }` | Plan + execute (no buttons) |
 | `POST /api/intent/{id}/execute` | Execute planned micro-tasks |
 | `GET /api/intent/{id}` | Full briefing |
-| `GET /api/intent/firewall` | 3 guardian slots status |
+| `GET /api/doctor/status` | Warp-speed health snapshot |
+| `POST /api/doctor/scan` | Auto-repair + firewall escalation (n8n cron 5 min) |
 | `GET /api/intent/judgment-rules` | What needs human judgment |
 | `PATCH /api/intent/judgment-rules/{key}` | Commander configures rules |
 | `GET /api/treasury/human-capital` | Float → gig capacity |
