@@ -445,6 +445,23 @@ class SovereignLedgerEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class SovereignCloserPayout(Base):
+    """Closer pay queue — bootstrap defers; paid from host-funded treasury or host direct."""
+
+    __tablename__ = "sovereign_closer_payouts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    mission_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    host_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    closer_wallet: Mapped[str] = mapped_column(String(128))
+    amount_cents: Mapped[int] = mapped_column(Integer, default=3000)
+    status: Mapped[str] = mapped_column(String(32), default="deferred")
+    payment_mode: Mapped[str] = mapped_column(String(32), default="bootstrap")
+    payout_tx_hash: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
 class HumanEscalation(Base):
     __tablename__ = "human_escalations"
 

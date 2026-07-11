@@ -83,10 +83,10 @@ MISSION_TEMPLATES = {
     "sovereign_presale_close": {
         "title": "Sovereign Stay Presale — {neighborhood}",
         "description": (
-            "DOORSTEP PRESALE — CRYPTO DIRECT. Visit STR host at {address}. "
-            "Show treasury USDC QR ({chain}). Host sends ${gross} USDC to {treasury} BEFORE leaving. "
-            "Submit tx hash + your USDC wallet for ${closer} payout. "
-            "NO Cash App. PAY ON COMPLETION — instant crypto when tx confirmed."
+            "DOORSTEP PRESALE — ZERO COMMANDER OOP. Mode: {mode}. Visit STR host at {address}. "
+            "BOOTSTRAP: host sends 100% ${gross} USDC to treasury {treasury}. "
+            "SPLIT: host sends ${gross} minus ${closer} to treasury + ${closer} to closer wallet. "
+            "Submit tx hash(es). Commander never funds wallet."
         ),
         "default_pay_cents": 3000,
         "tags": ["sovereign-stay", "presale", "crypto", "closer"],
@@ -141,13 +141,14 @@ async def deploy_mission(
         from app.config import settings
         from app.treasury.crypto_rail import treasury_receive_instructions
 
-        brief = treasury_receive_instructions()
+        brief = await treasury_receive_instructions(db)
         fmt.update(
             {
                 "chain": brief["chain"],
-                "gross": f"{brief['amount_usd']:.0f}",
-                "closer": f"{brief['closer_payout_usd']:.0f}",
+                "gross": f"{settings.sovereign_upfront_fee_cents / 100:.0f}",
+                "closer": f"{brief.get('closer_payout_usd', 30):.0f}",
                 "treasury": brief["treasury_address"],
+                "mode": brief["payment_mode"],
             }
         )
     description = template["description"].format(**fmt)

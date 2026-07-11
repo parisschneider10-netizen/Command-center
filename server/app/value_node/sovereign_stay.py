@@ -16,8 +16,11 @@ from app.models import CityCap, SovereignHost, SovereignLedgerEvent
 from app.services import log_activity
 from app.treasury.float import record_host_payment
 from app.treasury.crypto_rail import (
-    payout_closer_crypto,
-    record_crypto_presale_inbound,
+    current_payment_mode,
+    defer_closer_payout,
+    record_closer_paid_by_host,
+    record_crypto_treasury_inbound,
+    settle_deferred_closers,
     treasury_receive_instructions,
 )
 from app.value_node.ground_force import complete_mission, deploy_mission
@@ -259,9 +262,9 @@ async def process_onboarding_presale(
     return {"ok": True, "layer": 1, "host_profile": host_profile, "matrix": status}
 
 
-async def crypto_receive_brief() -> dict:
-    """Closer door script — host pays treasury USDC directly."""
-    return treasury_receive_instructions()
+async def crypto_receive_brief(db: AsyncSession) -> dict:
+    """Closer door script — bootstrap first fuel, then host-paid split."""
+    return await treasury_receive_instructions(db)
 
 
 async def process_crypto_presale(
@@ -270,39 +273,34 @@ async def process_crypto_presale(
     host_name: str,
     property_address: str,
     city_grid: str,
-    tx_hash: str,
+    treasury_tx_hash: str,
     closer_wallet: str,
     worker_ref: str,
-    amount_cents: int | None = None,
+    closer_tx_hash: str | None = None,
     proof_notes: str = "",
     dry_run_closer: bool = True,
     mission_id: int | None = None,
 ) -> dict:
     """
-    Layer 1 crypto rail — host sends USDC straight to treasury wallet.
-    No Cash App middleman. Instant clear + closer paid in crypto.
+    Zero Commander OOP crypto presale.
+    bootstrap: host → 100% treasury (first fuel). Closer deferred.
+    split: host → treasury + closer direct (2 txs). Commander wallet untouched.
     """
+    from app.hive.empire_research import trigger_empire_research_on_fuel
     from app.models import GroundForceMission
 
     cap = await ensure_city_grid(db, city_grid)
     locked = await count_city_units(db, cap.city_code)
     if locked >= cap.max_units:
-        return {
-            "ok": False,
-            "error": f"City grid full — {cap.max_units} units max in {city_grid}",
-        }
+        return {"ok": False, "error": f"City grid full — {cap.max_units} units max in {city_grid}"}
 
     if not settings.treasury_usdc_address:
-        return {
-            "ok": False,
-            "error": "TREASURY_USDC_ADDRESS not set in VPS .env",
-        }
+        return {"ok": False, "error": "TREASURY_USDC_ADDRESS not set in VPS .env"}
 
-    gross = amount_cents or settings.sovereign_upfront_fee_cents
+    mode = await current_payment_mode(db)
+    gross = settings.sovereign_upfront_fee_cents
     closer_cut = settings.sovereign_closer_bounty_cents
-    net_float = gross - closer_cut
-    cursor_earmark = settings.sovereign_cursor_earmark_cents
-    vault_reserve = net_float - cursor_earmark
+    treasury_cents = gross if mode == "bootstrap" else gross - closer_cut
 
     if not mission_id:
         dispatch = await deploy_mission(
@@ -329,88 +327,113 @@ async def process_crypto_presale(
             status="ACTIVE_LOCK_IN",
             gross_collected_cents=gross,
             closer_cut_cents=closer_cut,
-            net_float_cents=net_float,
-            cursor_earmark_cents=cursor_earmark,
-            vault_reserve_cents=vault_reserve,
+            net_float_cents=treasury_cents if mode == "bootstrap" else treasury_cents,
+            cursor_earmark_cents=min(settings.sovereign_cursor_earmark_cents, treasury_cents),
+            vault_reserve_cents=max(0, treasury_cents - settings.sovereign_cursor_earmark_cents),
             closer_mission_id=mission_id,
         )
         db.add(host)
         await db.commit()
         await db.refresh(host)
 
-        ledger = await record_crypto_presale_inbound(
+        ledger = await record_crypto_treasury_inbound(
             db,
-            amount_cents=gross,
+            amount_cents=treasury_cents,
             host_id=host.id,
-            tx_hash=tx_hash,
-            description=f"Crypto presale — {host_name} — {city_grid}",
+            tx_hash=treasury_tx_hash,
+            description=f"Crypto presale ({mode}) — {host_name} — {city_grid}",
+            payment_mode=mode,
         )
         host.inbound_ledger_id = ledger.id
         await db.commit()
 
+        closer_result: dict = {}
+        if mode == "bootstrap":
+            deferred = await defer_closer_payout(
+                db,
+                mission_id=mission_id,
+                host_id=host.id,
+                closer_wallet=closer_wallet,
+                amount_cents=closer_cut,
+            )
+            closer_result = {
+                "status": "deferred",
+                "payout_id": deferred.id,
+                "message": (
+                    "First fuel secured. Closer paid from host-funded treasury on play 2+. "
+                    "Zero Commander OOP."
+                ),
+            }
+        else:
+            if not closer_tx_hash:
+                raise ValueError("split mode requires closer_tx_hash — host pays closer at door")
+            paid = await record_closer_paid_by_host(
+                db,
+                mission_id=mission_id,
+                host_id=host.id,
+                closer_wallet=closer_wallet,
+                amount_cents=closer_cut,
+                closer_tx_hash=closer_tx_hash,
+            )
+            closer_result = {
+                "status": "paid_host_direct",
+                "payout_id": paid.id,
+                "closer_tx_hash": closer_tx_hash,
+                "message": "Host paid closer directly. Commander wallet not used.",
+            }
+            deferred_settled = await settle_deferred_closers(db)
+            if deferred_settled:
+                closer_result["deferred_settled"] = deferred_settled
+
         mission = await db.get(GroundForceMission, mission_id)
         if mission:
             mission.status = "completed"
-            mission.proof_notes = proof_notes or f"Crypto tx: {tx_hash}"
+            mission.proof_notes = proof_notes or f"Treasury tx: {treasury_tx_hash}"
             mission.completed_at = datetime.now(timezone.utc)
             mission.host_payment_ledger_id = ledger.id
             mission.host_id = host.id
             await db.commit()
 
-        payout = await payout_closer_crypto(
+        research = await trigger_empire_research_on_fuel(
             db,
-            amount_cents=closer_cut,
-            mission_id=mission_id,
-            closer_wallet=closer_wallet,
-            from_ledger_id=ledger.id,
-            inbound_tx_hash=tx_hash,
+            amount_cents=treasury_cents,
+            source_ledger_id=ledger.id,
+            trigger=f"crypto_{mode}",
         )
 
         host_profile = {
             "id": external_id,
             "host_id": host.id,
-            "payment_rail": "crypto_direct",
-            "tx_hash": tx_hash,
-            "treasury_address": settings.treasury_usdc_address,
-            "chain": settings.treasury_crypto_chain,
-            "asset": settings.treasury_crypto_asset,
-            "host_name": host_name,
-            "city_grid": city_grid,
-            "financials": {
-                "gross_collected": gross / 100,
-                "closer_crypto_payout": closer_cut / 100,
-                "closer_wallet": closer_wallet,
-                "net_float_generated": net_float / 100,
-            },
-            "ledger_id": ledger.id,
-            "payout_ledger_id": payout.id,
-            "payout_action": (
-                f"Send ${closer_cut / 100:.2f} {settings.treasury_crypto_asset} "
-                f"to {closer_wallet} from treasury wallet NOW"
-            ),
+            "payment_mode": mode,
+            "commander_oop_usd": 0,
+            "treasury_tx_hash": treasury_tx_hash,
+            "treasury_inbound_usd": treasury_cents / 100,
+            "closer": closer_result,
+            "research_task_id": research.get("task_id"),
         }
 
         await commit_to_private_ledger(
             db,
-            event_type="LAYER_1_CRYPTO_EXTRACTION",
+            event_type=f"LAYER_1_CRYPTO_{mode.upper()}",
             payload=host_profile,
             host_id=host.id,
         )
-        await log_activity(
-            db,
-            "sovereign_crypto_presale",
-            f"CRYPTO L1: {host_name} — {tx_hash[:12]}…",
-            {"host_id": host.id, "tx_hash": tx_hash},
-        )
         await trigger_n8n("sovereign-crypto-presale", host_profile)
 
+        next_mode = await current_payment_mode(db)
         return {
             "ok": True,
             "layer": 1,
-            "payment_rail": "crypto_direct",
+            "payment_mode": mode,
+            "next_mode": next_mode,
+            "commander_oop": 0,
             "host_profile": host_profile,
+            "research": research,
             "matrix": await matrix_status(db),
-            "warpspeed": "Host → treasury USDC. No Cash App delay.",
+            "warpspeed": (
+                "Bootstrap fuel locked." if mode == "bootstrap"
+                else "Split pay — host funded treasury + closer."
+            ),
         }
     except ValueError as exc:
         return {"ok": False, "error": str(exc)}

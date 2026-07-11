@@ -77,10 +77,11 @@ async def get_defi_ledger(
 
 @router.get("/crypto/receive")
 async def get_crypto_receive(
+    db: AsyncSession = Depends(get_db),
     _: str = Depends(get_current_user),
 ) -> dict:
-    """Closer briefing — treasury USDC address + door script."""
-    return await crypto_receive_brief()
+    """Closer briefing — bootstrap fuel play 1, then host-paid split."""
+    return await crypto_receive_brief(db)
 
 
 @router.post("/presale")

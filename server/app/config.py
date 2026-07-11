@@ -65,6 +65,7 @@ class Settings(BaseSettings):
     treasury_crypto_chain: str = "base"
     treasury_crypto_asset: str = "USDC"
     treasury_crypto_auto_payout_closer: bool = True
+    sovereign_payment_mode: str = "auto"
 
     @property
     def cors_origin_list(self) -> list[str]:

@@ -76,6 +76,15 @@ async def allocate_cleared_revenue(
     )
 
     await auto_fund_top_priorities(db)
+
+    from app.hive.empire_research import trigger_empire_research_on_fuel
+
+    await trigger_empire_research_on_fuel(
+        db,
+        amount_cents=ledger_entry.amount_cents,
+        source_ledger_id=ledger_entry.id,
+        trigger="treasury_clear",
+    )
     return allocations
 
 

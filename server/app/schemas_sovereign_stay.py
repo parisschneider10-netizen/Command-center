@@ -14,10 +14,13 @@ class CryptoPresale(BaseModel):
     host_name: str
     property_address: str
     city_grid: str
-    tx_hash: str = Field(min_length=16)
-    closer_wallet: str = Field(min_length=8, description="Closer USDC wallet for $30 payout")
+    treasury_tx_hash: str = Field(min_length=16)
+    closer_wallet: str = Field(min_length=8)
     worker_ref: str
-    amount_cents: int | None = Field(default=None, ge=1)
+    closer_tx_hash: str | None = Field(
+        default=None,
+        description="Required after bootstrap play 1 — host pays closer direct",
+    )
     proof_notes: str = ""
     dry_run_closer: bool = True
     mission_id: int | None = None
