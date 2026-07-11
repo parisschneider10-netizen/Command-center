@@ -83,14 +83,13 @@ MISSION_TEMPLATES = {
     "sovereign_presale_close": {
         "title": "Sovereign Stay Presale — {neighborhood}",
         "description": (
-            "DOORSTEP PRESALE. Visit STR host at {address}. "
-            "Collect $150 upfront (Cash App/Venmo/Stripe) for amenity lock-in package. "
-            "Badges: FREE_CHECKOUT_RIDE + VERIFIED_MATCHDAY_WASH. "
-            "Payment screenshot required BEFORE leaving. "
-            "PAY ON COMPLETION — $30 instant when payment confirmed."
+            "DOORSTEP PRESALE — CRYPTO DIRECT. Visit STR host at {address}. "
+            "Show treasury USDC QR ({chain}). Host sends ${gross} USDC to {treasury} BEFORE leaving. "
+            "Submit tx hash + your USDC wallet for ${closer} payout. "
+            "NO Cash App. PAY ON COMPLETION — instant crypto when tx confirmed."
         ),
         "default_pay_cents": 3000,
-        "tags": ["sovereign-stay", "presale", "closer"],
+        "tags": ["sovereign-stay", "presale", "crypto", "closer"],
     },
     "checkout_turnover": {
         "title": "STR Turnover & Transport — {neighborhood}",
@@ -133,11 +132,25 @@ async def deploy_mission(
 
         st = await blitz_status(db)
         slots_note = str(st["slots_remaining"])
-    description = template["description"].format(
-        neighborhood=neighborhood,
-        address=target_address or "see briefing",
-        slots=slots_note,
-    )
+    fmt = {
+        "neighborhood": neighborhood,
+        "address": target_address or "see briefing",
+        "slots": slots_note,
+    }
+    if mission_type == "sovereign_presale_close":
+        from app.config import settings
+        from app.treasury.crypto_rail import treasury_receive_instructions
+
+        brief = treasury_receive_instructions()
+        fmt.update(
+            {
+                "chain": brief["chain"],
+                "gross": f"{brief['amount_usd']:.0f}",
+                "closer": f"{brief['closer_payout_usd']:.0f}",
+                "treasury": brief["treasury_address"],
+            }
+        )
+    description = template["description"].format(**fmt)
 
     mission = GroundForceMission(
         mission_type=mission_type,

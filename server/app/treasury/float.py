@@ -32,7 +32,7 @@ async def record_host_payment(
     now = datetime.now(timezone.utc)
     hours = hold_hours
     if hours is None:
-        if payment_category == "sandbox_instant" and settings.treasury_sandbox_instant_clear:
+        if payment_category in ("sandbox_instant", "crypto_instant") and settings.treasury_sandbox_instant_clear:
             hours = 0
         elif payment_category == "sales_close":
             hours = settings.treasury_sales_close_hold_hours
@@ -125,7 +125,7 @@ async def payout_worker(
         if not parent:
             raise ValueError("Parent payment not found")
         allowed = parent.status in ("cleared", "hold_48h", "hold_4h")
-        if parent.payment_category in ("sales_close", "sandbox_instant") and parent.status in (
+        if parent.payment_category in ("sales_close", "sandbox_instant", "crypto_instant") and parent.status in (
             "hold_4h",
             "hold_48h",
             "cleared",

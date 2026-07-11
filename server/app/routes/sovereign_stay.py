@@ -5,12 +5,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import get_current_user
 from app.database import get_db
 from app.models import SovereignHost
-from app.schemas_sovereign_stay import CheckoutLogistics, OnboardingPresale, OptimizationRun
+from app.schemas_sovereign_stay import (
+    CheckoutLogistics,
+    CryptoPresale,
+    OnboardingPresale,
+    OptimizationRun,
+)
 from app.value_node.sovereign_stay import (
     city_grid_status,
+    crypto_receive_brief,
     execute_ai_optimization_engine,
     list_ledger_events,
     matrix_status,
+    process_crypto_presale,
     process_onboarding_presale,
     run_simulation,
     trigger_checkout_logistics,
@@ -68,6 +75,14 @@ async def get_defi_ledger(
     return await list_ledger_events(db)
 
 
+@router.get("/crypto/receive")
+async def get_crypto_receive(
+    _: str = Depends(get_current_user),
+) -> dict:
+    """Closer briefing — treasury USDC address + door script."""
+    return await crypto_receive_brief()
+
+
 @router.post("/presale")
 async def post_presale(
     body: OnboardingPresale,
@@ -78,6 +93,19 @@ async def post_presale(
     result = await process_onboarding_presale(db, **body.model_dump())
     if not result.get("ok"):
         raise HTTPException(status_code=400, detail=result.get("error", "presale failed"))
+    return result
+
+
+@router.post("/presale-crypto")
+async def post_presale_crypto(
+    body: CryptoPresale,
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_user),
+) -> dict:
+    """Layer 1 crypto — host USDC direct to treasury, closer paid in crypto."""
+    result = await process_crypto_presale(db, **body.model_dump())
+    if not result.get("ok"):
+        raise HTTPException(status_code=400, detail=result.get("error", "crypto presale failed"))
     return result
 
 

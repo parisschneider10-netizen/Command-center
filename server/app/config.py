@@ -61,6 +61,10 @@ class Settings(BaseSettings):
     sovereign_buyback_vacancy_threshold: float = 0.30
     sovereign_ledger_path: str = "./vault/sovereign/empire_ledger.jsonl"
     treasury_sandbox_instant_clear: bool = True
+    treasury_usdc_address: str = ""
+    treasury_crypto_chain: str = "base"
+    treasury_crypto_asset: str = "USDC"
+    treasury_crypto_auto_payout_closer: bool = True
 
     @property
     def cors_origin_list(self) -> list[str]:
