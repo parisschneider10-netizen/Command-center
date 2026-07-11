@@ -86,10 +86,16 @@ async def bridge_status(_: str = Depends(get_current_user)) -> dict:
             "4. Merge PR #1 → deploy docker compose on Servury VPS",
         ],
         "money_play_after_deploy": [
-            "KC laundry host signup → /api/laundry/host-signup",
+            "Sovereign Stay presale → POST /api/sovereign-stay/presale (sandbox instant treasury)",
+            "40 cities × 3 units — funded sandbox grid",
             "Ground force deploy → /api/ground-force/deploy",
-            "Expansion city lock → voice or /api/value-node/expansion/city-lock",
+            "Treasury ammo → sovereign acquisitions auto-fund on instant clear",
         ],
+        "commander_loop": {
+            "at_work_no_vps": "GitHub mobile → Issue → @cursor (works now)",
+            "after_vps": "Call SARA + portal + GitHub Issues (all three)",
+            "not_gmail_to_cursor": "Forward to sovereign mail OR GitHub email-to-issue",
+        },
     }
 
 

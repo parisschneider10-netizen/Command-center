@@ -60,6 +60,7 @@ class Settings(BaseSettings):
     sovereign_cursor_earmark_cents: int = 2000
     sovereign_buyback_vacancy_threshold: float = 0.30
     sovereign_ledger_path: str = "./vault/sovereign/empire_ledger.jsonl"
+    treasury_sandbox_instant_clear: bool = True
 
     @property
     def cors_origin_list(self) -> list[str]:

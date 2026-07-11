@@ -23,18 +23,32 @@ async def record_host_payment(
     """
     Host pays upfront. Funds enter hold before worker payout.
     sales_close: 4h hold — ground force closer paid fast after on-site prepay.
+    sandbox_instant: cleared immediately — ammo pools funded in real time (40×3 sandbox).
     """
+    from app.treasury.allocation import allocate_cleared_revenue
+
     empire = await detect_empire_tier(db)
     rates = effective_treasury_rates(empire["tier"])
+    now = datetime.now(timezone.utc)
     hours = hold_hours
     if hours is None:
-        hours = (
-            settings.treasury_sales_close_hold_hours
-            if payment_category == "sales_close"
-            else rates["hold_hours"]
-        )
-    status = "hold_4h" if hours <= settings.treasury_sales_close_hold_hours else "hold_48h"
-    release_at = datetime.now(timezone.utc) + timedelta(hours=hours)
+        if payment_category == "sandbox_instant" and settings.treasury_sandbox_instant_clear:
+            hours = 0
+        elif payment_category == "sales_close":
+            hours = settings.treasury_sales_close_hold_hours
+        else:
+            hours = rates["hold_hours"]
+
+    if hours <= 0:
+        status = "cleared"
+        release_at = now
+    elif hours <= settings.treasury_sales_close_hold_hours:
+        status = "hold_4h"
+        release_at = now + timedelta(hours=hours)
+    else:
+        status = "hold_48h"
+        release_at = now + timedelta(hours=hours)
+
     entry = TreasuryLedger(
         wallet_id=None,
         amount_cents=amount_cents,
@@ -43,18 +57,29 @@ async def record_host_payment(
         status=status,
         counterparty=f"host:{host_id}",
         release_at=release_at,
+        resolved_at=now if status == "cleared" else None,
         nuclear_required=False,
         payment_category=payment_category,
     )
     db.add(entry)
     await db.commit()
     await db.refresh(entry)
-    await log_activity(
-        db,
-        "host_payment_hold",
-        f"${amount_cents / 100:.2f} held until {release_at.isoformat()}",
-        {"ledger_id": entry.id, "host_id": host_id, "float_hours": hours, "category": payment_category},
-    )
+
+    if status == "cleared":
+        await allocate_cleared_revenue(db, entry)
+        await log_activity(
+            db,
+            "sandbox_instant_clear",
+            f"${amount_cents / 100:.2f} cleared instantly → ammo pools",
+            {"ledger_id": entry.id, "host_id": host_id, "category": payment_category},
+        )
+    else:
+        await log_activity(
+            db,
+            "host_payment_hold",
+            f"${amount_cents / 100:.2f} held until {release_at.isoformat()}",
+            {"ledger_id": entry.id, "host_id": host_id, "float_hours": hours, "category": payment_category},
+        )
     return entry
 
 
@@ -100,7 +125,11 @@ async def payout_worker(
         if not parent:
             raise ValueError("Parent payment not found")
         allowed = parent.status in ("cleared", "hold_48h", "hold_4h")
-        if parent.payment_category == "sales_close" and parent.status in ("hold_4h", "hold_48h"):
+        if parent.payment_category in ("sales_close", "sandbox_instant") and parent.status in (
+            "hold_4h",
+            "hold_48h",
+            "cleared",
+        ):
             allowed = parent.amount_cents >= amount_cents
         if not allowed:
             raise ValueError("Parent payment not cleared for payout")

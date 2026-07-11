@@ -203,7 +203,7 @@ async def process_onboarding_presale(
         amount_cents=gross,
         host_id=host.id,
         description=f"Sovereign Stay presale — {host_name} — {city_grid}",
-        payment_category="sales_close",
+        payment_category="sandbox_instant",
     )
     host.inbound_ledger_id = ledger.id
     await db.commit()
