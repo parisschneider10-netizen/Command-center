@@ -409,6 +409,42 @@ class KcHostLead(Base):
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
+class SovereignHost(Base):
+    """Sovereign Stay host — Layer 1 lock-in, badges, buyback target."""
+
+    __tablename__ = "sovereign_hosts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    external_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    host_name: Mapped[str] = mapped_column(String(255))
+    property_address: Mapped[str] = mapped_column(Text)
+    city_grid: Mapped[str] = mapped_column(String(128), index=True)
+    city_code: Mapped[str] = mapped_column(String(32), index=True)
+    badges_json: Mapped[str] = mapped_column(Text, default='["FREE_CHECKOUT_RIDE","VERIFIED_MATCHDAY_WASH"]')
+    status: Mapped[str] = mapped_column(String(32), default="ACTIVE_LOCK_IN")
+    gross_collected_cents: Mapped[int] = mapped_column(Integer, default=0)
+    closer_cut_cents: Mapped[int] = mapped_column(Integer, default=0)
+    net_float_cents: Mapped[int] = mapped_column(Integer, default=0)
+    cursor_earmark_cents: Mapped[int] = mapped_column(Integer, default=0)
+    vault_reserve_cents: Mapped[int] = mapped_column(Integer, default=0)
+    vacancy_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    inbound_ledger_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    closer_mission_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class SovereignLedgerEvent(Base):
+    """Append-only DeFi-style audit trail — immutable VPS ledger."""
+
+    __tablename__ = "sovereign_ledger_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    event_type: Mapped[str] = mapped_column(String(64), index=True)
+    host_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    payload_json: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class HumanEscalation(Base):
     __tablename__ = "human_escalations"
 

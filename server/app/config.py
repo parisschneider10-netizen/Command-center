@@ -50,6 +50,16 @@ class Settings(BaseSettings):
     intent_auto_post_rah: bool = True
     kcmo_max_units: int = 30
     treasury_sales_close_hold_hours: int = 4
+    sovereign_target_cities: int = 40
+    sovereign_units_per_city: int = 3
+    sovereign_upfront_fee_cents: int = 15000
+    sovereign_closer_bounty_cents: int = 3000
+    sovereign_management_fee_pct: float = 0.10
+    sovereign_rentahuman_bounty_cents: int = 2500
+    sovereign_partner_kickback_cents: int = 1500
+    sovereign_cursor_earmark_cents: int = 2000
+    sovereign_buyback_vacancy_threshold: float = 0.30
+    sovereign_ledger_path: str = "./vault/sovereign/empire_ledger.jsonl"
 
     @property
     def cors_origin_list(self) -> list[str]:

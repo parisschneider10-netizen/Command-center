@@ -7,3 +7,4 @@ node_modules/
 dist/
 *.db
 *.tsbuildinfo
+vault/sovereign/empire_ledger.jsonl

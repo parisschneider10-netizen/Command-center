@@ -80,6 +80,30 @@ MISSION_TEMPLATES = {
         "default_pay_cents": 4500,
         "tags": ["kc-blitz", "host-close", "sales", "kcmo"],
     },
+    "sovereign_presale_close": {
+        "title": "Sovereign Stay Presale — {neighborhood}",
+        "description": (
+            "DOORSTEP PRESALE. Visit STR host at {address}. "
+            "Collect $150 upfront (Cash App/Venmo/Stripe) for amenity lock-in package. "
+            "Badges: FREE_CHECKOUT_RIDE + VERIFIED_MATCHDAY_WASH. "
+            "Payment screenshot required BEFORE leaving. "
+            "PAY ON COMPLETION — $30 instant when payment confirmed."
+        ),
+        "default_pay_cents": 3000,
+        "tags": ["sovereign-stay", "presale", "closer"],
+    },
+    "checkout_turnover": {
+        "title": "STR Turnover & Transport — {neighborhood}",
+        "description": (
+            "Checkout turnover at {address}. "
+            "1. Housekeeping + bag laundry loop. "
+            "2. Confirm checkout via photo upload. "
+            "3. Coordinate guest transport to Partner Locker Hub. "
+            "PAY ON COMPLETION — photo proof required."
+        ),
+        "default_pay_cents": 2500,
+        "tags": ["sovereign-stay", "checkout", "turnover"],
+    },
 }
 
 

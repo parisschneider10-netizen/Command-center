@@ -70,7 +70,18 @@ KC_WORLD_CUP_BLITZ_TEMPLATE = {
     ],
 }
 
+SOVEREIGN_STAY_TEMPLATE = {
+    "name": "sovereign_stay_matrix",
+    "phases": [
+        {"phase": 1, "title": "Doorstep presale", "owner": "human", "detail": "POST /api/sovereign-stay/presale — $150 in, $30 closer, $120 float"},
+        {"phase": 2, "title": "Badge + buyback brain", "owner": "agent", "detail": "POST optimize — badges boost velocity, buyback if vacancy >30%"},
+        {"phase": 3, "title": "Checkout actuators", "owner": "human", "detail": "POST checkout — RentAHuman turnover + partner kickback"},
+        {"phase": 4, "title": "Scale grid", "owner": "agent", "detail": "3 units × 40 cities = 120 evergreen units"},
+    ],
+}
+
 INTENT_MATCHERS: list[dict] = [
+    {"keywords": ["sovereign stay", "sovereign", "v1_core", "egoist", "40 cities", "3 units"], "template": SOVEREIGN_STAY_TEMPLATE},
     {"keywords": ["deploy", "vps", "servury", "command deck", "online", "docker"], "template": DEPLOY_TEMPLATE},
     {"keywords": ["welcome basket", "basket", "new host", "welcome kit"], "template": KC_WELCOME_BASKET_TEMPLATE},
     {"keywords": ["world cup", "blitz", "lock 30", "kcmo", "close sale"], "template": KC_WORLD_CUP_BLITZ_TEMPLATE},
@@ -173,6 +184,34 @@ MICRO_TASK_LIBRARY: dict[str, list[dict]] = {
             "description": "Connect GHL form webhook to POST /api/laundry/host-signup",
             "executor": "agent",
             "will_priority": 8,
+        },
+    ],
+    "sovereign_stay_matrix": [
+        {
+            "title": "Layer 1 — Doorstep presale closer",
+            "description": "RentAHuman collects $150 upfront. POST /api/sovereign-stay/presale on payment proof.",
+            "executor": "rentahuman",
+            "budget_usd": 30.0,
+            "tags": ["sovereign-stay", "presale", "layer-1"],
+        },
+        {
+            "title": "Layer 2 — Badge + buyback optimization",
+            "description": "Agent monitors vacancy. POST /api/sovereign-stay/hosts/{id}/optimize when >30%.",
+            "executor": "agent",
+            "will_priority": 8,
+        },
+        {
+            "title": "Layer 3 — Checkout turnover dispatch",
+            "description": "RentAHuman turnover + locker hub routing. POST checkout endpoint.",
+            "executor": "rentahuman",
+            "budget_usd": 25.0,
+            "tags": ["sovereign-stay", "checkout", "layer-3"],
+        },
+        {
+            "title": "DeFi ledger audit export",
+            "description": "GET /api/sovereign-stay/ledger — JSONL on VPS for investor pitch trail.",
+            "executor": "agent",
+            "will_priority": 6,
         },
     ],
     "kc_world_cup_blitz": [
