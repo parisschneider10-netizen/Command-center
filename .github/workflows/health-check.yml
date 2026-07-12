@@ -1,0 +1,27 @@
+# Hourly public health ping — check status from GitHub without SSH.
+
+name: Servury health check
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check public API
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          if [ -z "$VPS_HOST" ]; then
+            echo "Add VPS_HOST secret to enable health checks." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "Checking http://${VPS_HOST}:8000/health"
+          curl -fsS --max-time 15 "http://${VPS_HOST}:8000/health" | tee health.json
+          echo "✅ Empire API is up at http://${VPS_HOST}:8000/health" >> "$GITHUB_STEP_SUMMARY"

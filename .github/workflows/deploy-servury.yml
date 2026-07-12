@@ -1,0 +1,168 @@
+# Deploy Command Center to Servury VPS from GitHub (no phone SSH needed).
+#
+# One-time setup (GitHub website, ~5 min):
+#   Repo → Settings → Secrets and variables → Actions → New secret:
+#     VPS_HOST         = 157.254.194.89
+#     VPS_USER         = root
+#     VPS_SSH_PASSWORD = (root password from Servury dashboard)
+#   Optional instead of password: VPS_SSH_KEY = private SSH key
+#
+# Run: Actions → "Deploy Servury VPS" → Run workflow
+# Or comment on any issue: @cursor deploy servury
+
+name: Deploy Servury VPS
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Git branch to deploy
+        required: true
+        default: cursor/sovereign-stay-matrix-1894
+        type: string
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  deploy:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request == null &&
+        contains(github.event.comment.body, '@cursor') &&
+        contains(github.event.comment.body, 'deploy') &&
+        contains(github.event.comment.body, 'servury')
+      )
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || 'cursor/sovereign-stay-matrix-1894' }}
+    steps:
+      - name: Check required secrets
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_SSH_PASSWORD: ${{ secrets.VPS_SSH_PASSWORD }}
+        run: |
+          missing=0
+          for name in VPS_HOST VPS_USER; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing secret $name"
+              missing=1
+            fi
+          done
+          if [ -z "$VPS_SSH_KEY" ] && [ -z "$VPS_SSH_PASSWORD" ]; then
+            echo "::error::Set VPS_SSH_PASSWORD or VPS_SSH_KEY in repo secrets"
+            missing=1
+          fi
+          if [ "$missing" -ne 0 ]; then
+            echo ""
+            echo "Setup: GitHub repo → Settings → Secrets → Actions"
+            echo "  VPS_HOST=157.254.194.89"
+            echo "  VPS_USER=root"
+            echo "  VPS_SSH_PASSWORD=<from Servury dashboard>"
+            exit 1
+          fi
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          password: ${{ secrets.VPS_SSH_PASSWORD }}
+          command_timeout: 30m
+          script_stop: true
+          script: |
+            set -euo pipefail
+            export DEPLOY_BRANCH="${{ env.DEPLOY_BRANCH }}"
+            export PUBLIC_IP="${{ secrets.VPS_HOST }}"
+            curl -fsSL "https://raw.githubusercontent.com/parisschneider10-netizen/Command-center/${DEPLOY_BRANCH}/scripts/deploy-servury.sh" | bash
+            echo ""
+            echo "=== PORTAL LOGIN (save if new install) ==="
+            [ -f /opt/Command-center/.portal-password ] && cat /opt/Command-center/.portal-password || echo "(unchanged — see your saved password)"
+
+      - name: Diagnose from VPS
+        uses: appleboy/ssh-action@v1.2.0
+        continue-on-error: true
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          password: ${{ secrets.VPS_SSH_PASSWORD }}
+          script: bash /opt/Command-center/scripts/diagnose-vps.sh
+
+      - name: Public health check
+        id: public_health
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          set +e
+          body=$(curl -fsS --max-time 15 "http://${VPS_HOST}:8000/health" 2>&1)
+          code=$?
+          echo "body<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$body" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+          echo "ok=$([ $code -eq 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Write job summary
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          {
+            echo "## Servury deploy — ${{ env.DEPLOY_BRANCH }}"
+            echo ""
+            echo "| Check | Result |"
+            echo "|-------|--------|"
+            echo "| SSH deploy | ✅ finished |"
+            if [ "${{ steps.public_health.outputs.ok }}" = "true" ]; then
+              echo "| Public /health | ✅ OK |"
+            else
+              echo "| Public /health | ❌ failed — open ports 3000, 8000, 5678 in Servury firewall |"
+            fi
+            echo ""
+            echo "**Portal:** http://${VPS_HOST}:3000"
+            echo "**API:** http://${VPS_HOST}:8000/health"
+            echo "**SARA webhook:** http://${VPS_HOST}:8000/vapi/webhook"
+            echo ""
+            echo "New installs: portal password is in the **Deploy via SSH** step log."
+            if [ "${{ steps.public_health.outputs.ok }}" = "true" ]; then
+              echo ""
+              echo "**Health response:**"
+              echo '```json'
+              echo '${{ steps.public_health.outputs.body }}'
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Reply on issue (when triggered from comment)
+        if: github.event_name == 'issue_comment'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok = '${{ steps.public_health.outputs.ok }}' === 'true';
+            const host = '${{ secrets.VPS_HOST }}';
+            const lines = [
+              `### Servury deploy ${ok ? '✅' : '⚠️'}`,
+              '',
+              ok
+                ? `Public health is live: http://${host}:8000/health`
+                : `Deploy ran on VPS but public health failed. Open ports **3000, 8000, 5678** in Servury firewall, then re-run Actions → Deploy Servury VPS.`,
+              '',
+              `Portal: http://${host}:3000`,
+              `SARA webhook: http://${host}:8000/vapi/webhook`,
+              '',
+              'Portal password (new installs): see **Actions** → this run → **Deploy via SSH** log.',
+              'Full summary: **Actions** tab → this workflow run → **Summary**.',
+            ];
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: lines.join('\n'),
+            });

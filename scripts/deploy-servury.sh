@@ -64,9 +64,11 @@ TREASURY_CRYPTO_ASSET=USDC
 SOVEREIGN_PAYMENT_MODE=auto
 TZ=America/New_York
 EOF
+  echo "commander / $PORTAL_PASSWORD" > .portal-password
+  chmod 600 .portal-password
   echo ""
   echo "Portal login: commander / $PORTAL_PASSWORD"
-  echo "(Save this password — it is not shown again.)"
+  echo "(Also saved to .portal-password on the VPS for GitHub Actions retrieval.)"
   echo ""
 else
   echo ".env already exists; keeping existing secrets."
