@@ -1,0 +1,11 @@
+data/
+.env
+.portal-password
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+dist/
+*.db
+*.tsbuildinfo
+vault/sovereign/empire_ledger.jsonl
