@@ -70,9 +70,10 @@ function Dashboard() {
       setActivity(a);
       setCapability(cap);
       setAcquisitions(acq);
-      setCategories(cats.categories ?? {});
-      if (Object.keys(cats.categories ?? {}).length && !cats.categories[addCategory]) {
-        setAddCategory(Object.keys(cats.categories)[0]);
+      const categoryMap: Record<string, string> = cats.categories ?? {};
+      setCategories(categoryMap);
+      if (Object.keys(categoryMap).length && !categoryMap[addCategory]) {
+        setAddCategory(Object.keys(categoryMap)[0]);
       }
     } finally {
       setLoading(false);

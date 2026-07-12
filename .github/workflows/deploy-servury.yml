@@ -18,7 +18,7 @@ on:
       branch:
         description: Git branch to deploy
         required: true
-        default: cursor/sovereign-stay-matrix-1894
+        default: main
         type: string
   issue_comment:
     types: [created]
@@ -40,7 +40,7 @@ jobs:
       )
     runs-on: ubuntu-latest
     env:
-      DEPLOY_BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || 'cursor/sovereign-stay-matrix-1894' }}
+      DEPLOY_BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || 'main' }}
     steps:
       - name: Check required secrets
         env:

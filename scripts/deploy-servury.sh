@@ -3,7 +3,7 @@
 # Run on the VPS as root: bash scripts/deploy-servury.sh
 set -euo pipefail
 
-DEPLOY_BRANCH="${DEPLOY_BRANCH:-cursor/sovereign-stay-matrix-1894}"
+DEPLOY_BRANCH="${DEPLOY_BRANCH:-main}"
 REPO_URL="${REPO_URL:-https://github.com/parisschneider10-netizen/Command-center.git}"
 INSTALL_DIR="${INSTALL_DIR:-/opt/Command-center}"
 PUBLIC_IP="${PUBLIC_IP:-$(curl -fsS https://api.ipify.org 2>/dev/null || hostname -I | awk '{print $1}')}"
@@ -13,7 +13,14 @@ echo "==> Detected public IP: $PUBLIC_IP"
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y git curl ca-certificates openssl
+# Wait if another apt process is running (e.g. parallel deploy)
+for i in $(seq 1 30); do
+  if apt-get install -y git curl ca-certificates openssl; then
+    break
+  fi
+  echo "apt busy, waiting... ($i/30)"
+  sleep 10
+done
 
 if ! command -v docker >/dev/null 2>&1; then
   curl -fsSL https://get.docker.com | sh
