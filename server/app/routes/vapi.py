@@ -36,7 +36,26 @@ async def _require_wire_auth(
 @router.get("/status")
 async def vapi_status(_: str = Depends(get_current_user)) -> dict:
     """SARA / Vapi wire status — no dashboard needed."""
-    return {"ok": True, **wire_readiness()}
+    readiness = wire_readiness()
+    if settings.vapi_api_key and not readiness.get("sara_phone"):
+        try:
+            from app.integrations.vapi_client import list_phone_numbers, format_phone_number
+
+            numbers = await list_phone_numbers()
+            readiness["phone_numbers"] = [
+                {
+                    "id": row.get("id"),
+                    "number": format_phone_number(row),
+                    "name": row.get("name"),
+                    "assistant_id": row.get("assistantId"),
+                }
+                for row in numbers
+            ]
+            if numbers:
+                readiness["sara_phone"] = format_phone_number(numbers[0])
+        except Exception as exc:
+            readiness["phone_lookup_error"] = str(exc)
+    return {"ok": True, **readiness}
 
 
 @router.post("/machine-wire")

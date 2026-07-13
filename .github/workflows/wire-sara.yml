@@ -60,6 +60,12 @@ jobs:
               MACHINE_WIRE_TOKEN "$WIRE_TOKEN"
             docker compose up -d --build api
             bash scripts/setup-sslip-https.sh || true
+            echo "=== Vapi phone numbers on account ==="
+            VAPI_KEY=$(grep '^VAPI_API_KEY=' .env | cut -d= -f2- || true)
+            if [ -n "$VAPI_KEY" ]; then
+              curl -sS -H "Authorization: Bearer $VAPI_KEY" "https://api.vapi.ai/phone-number" | tee /tmp/vapi-phones.json
+              echo ""
+            fi
             echo "Waiting for API..."
             for i in $(seq 1 30); do
               curl -fsS http://127.0.0.1:8000/health >/dev/null 2>&1 && break
@@ -74,6 +80,12 @@ jobs:
             if [ "$HTTP_CODE" = "200" ] && grep -q '"ok":true' /tmp/wire-result.json 2>/dev/null; then
               echo "=== SARA WIRED ==="
               cat vault/commander/vapi-wire.json 2>/dev/null || cat /tmp/wire-result.json
+              PHONE=$(python3 -c "import json; d=json.load(open('/tmp/wire-result.json')); print(d.get('phone_number') or '')" 2>/dev/null || true)
+              if [ -n "$PHONE" ]; then
+                echo ""
+                echo "SARA PHONE: $PHONE"
+                echo "SARA PHONE: $PHONE" >> "$GITHUB_STEP_SUMMARY"
+              fi
             else
               echo "=== WIRE FAILED — see JSON above ==="
               exit 1

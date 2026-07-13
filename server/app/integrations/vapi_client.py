@@ -92,6 +92,45 @@ def build_assistant_payload(https_base: str, *, include_tools: bool = True) -> d
     return payload
 
 
+async def list_phone_numbers() -> list[dict]:
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        response = await client.get(f"{VAPI_BASE}/phone-number", headers=_headers())
+        if response.status_code >= 400:
+            detail = response.text
+            try:
+                detail = response.json()
+            except Exception:
+                pass
+            raise ValueError(f"Vapi list phone numbers failed ({response.status_code}): {detail}")
+        body = response.json()
+        if isinstance(body, list):
+            return body
+        return body.get("data", body.get("phoneNumbers", []))
+
+
+def format_phone_number(row: dict) -> str | None:
+    """Best-effort E.164 / display number from Vapi phone object."""
+    for key in ("number", "phoneNumber", "twilioPhoneNumber", "telnyxPhoneNumber"):
+        val = row.get(key)
+        if isinstance(val, str) and val.strip():
+            return val.strip()
+    return None
+
+
+async def resolve_primary_phone() -> dict | None:
+    """First Vapi number on account — used when VAPI_PHONE_NUMBER_ID unset."""
+    numbers = await list_phone_numbers()
+    if not numbers:
+        return None
+    row = numbers[0]
+    return {
+        "id": row.get("id", ""),
+        "number": format_phone_number(row),
+        "name": row.get("name"),
+        "assistant_id": row.get("assistantId"),
+    }
+
+
 async def list_assistants() -> list[dict]:
     async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.get(f"{VAPI_BASE}/assistant", headers=_headers())
@@ -159,12 +198,19 @@ async def wire_assistant(https_base: str) -> dict:
         )
 
     phone_result = None
-    if settings.vapi_phone_number_id:
+    phone_id = settings.vapi_phone_number_id.strip()
+    if not phone_id:
+        primary = await resolve_primary_phone()
+        if primary and primary.get("id"):
+            phone_id = primary["id"]
+    if phone_id:
         phone_result = await update_phone_number(
-            settings.vapi_phone_number_id,
+            phone_id,
             assistant_id,
             https_base,
         )
+
+    primary_phone = await resolve_primary_phone()
 
     return {
         "ok": True,
@@ -173,5 +219,7 @@ async def wire_assistant(https_base: str) -> dict:
         "webhook_url": f"{https_base.rstrip('/')}/vapi/webhook",
         "assistant_name": updated.get("name"),
         "phone_updated": phone_result is not None,
+        "phone_number": (primary_phone or {}).get("number"),
+        "phone_number_id": (primary_phone or {}).get("id") or phone_id or None,
         "tools_wired": tools_wired,
     }

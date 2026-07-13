@@ -108,6 +108,7 @@ async def health() -> dict:
             "expansion_dry_run": settings.expansion_dry_run,
             "vapi_key": wire.get("vapi_key_configured"),
             "sara_wired": read_wire_status().get("wired", False),
+            "sara_phone": read_wire_status().get("phone_number"),
             "https_base": wire.get("https_base"),
         },
     }

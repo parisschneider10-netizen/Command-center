@@ -121,10 +121,16 @@ def wire_readiness() -> dict:
         https_base = resolve_https_base()
     except ValueError:
         pass
+    phones: list[dict] = []
+    primary_phone = status.get("phone_number")
+    if status.get("wired") and primary_phone:
+        phones = [{"number": primary_phone, "id": status.get("phone_number_id")}]
     return {
         "vapi_key_configured": bool(settings.vapi_api_key),
         "assistant_id_configured": bool(settings.vapi_assistant_id),
         "phone_id_configured": bool(settings.vapi_phone_number_id),
+        "sara_phone": primary_phone or status.get("phone_number"),
+        "phone_numbers": phones,
         "https_base": https_base,
         "sslip_hostname": sslip_hostname() if https_base else None,
         "last_wire": status,
