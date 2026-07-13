@@ -86,13 +86,26 @@ SOVEREIGN_BUYBACK_VACANCY_THRESHOLD=0.30
 RENTAHUMAN_API_KEY=
 ```
 
-## 24-month stealth rollout
+## 24-month stealth rollout → MACHINE SPEED (Commander directive)
 
-| Phase | Target | Revenue model |
-|-------|--------|---------------|
-| Month 1–3 | 5 cities × 3 = 15 units | $150 × 15 = $2,250 float |
-| Month 4–12 | 20 cities × 3 = 60 units | Presale + 10% mgmt fee |
-| Month 13–24 | 40 cities × 3 = 120 units | Buyback + checkout kickbacks compound |
+> **Human-paced docs are obsolete.** Agents execute in parallel. Host funds upfront. Compound daily until grid locked.
+
+| Target | Horizon | How |
+|--------|---------|-----|
+| **Full grid** | **≤30 days** | 40 cities × 3 units = 120 locks — parallel agent waves, not serial |
+| **Daily** | Every 24h | New presales → instant treasury clear → fund next city closers + hive research |
+| **Per city** | As fast as closers close | 3 locks → next city (easiest-first ranked by hive) |
+
+**Close pitch (instant yes):** *"$150 presale. If vacancy spikes, buyback algorithm kicks in — you're not eating the loss. We take the floor risk."*
+
+**Lead focus:** **MTR hosts/PMs first** — already think mid-term, faster yes than cold STR tourists. Expansion node MTR recon + Sovereign Stay presale stack together.
+
+**Parallel (not sequential):**
+- Hive scrapes + ranks cities simultaneously
+- Multiple closers / actuators per wave (A2A + ground force)
+- Treasury from host #1 funds host #2 same day — compound until 120/120
+
+Legacy 12–24 month phasing is **retired** — see `vault/commander/operating-contract.md`.
 
 ## Voice intent
 

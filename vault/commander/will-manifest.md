@@ -81,6 +81,8 @@ Use humans ONLY when A2A + internal agents cannot:
 **Never ask Commander to click dashboards** for deploy, Vapi wire, HTTPS, or DNS.
 Use machine APIs + GitHub Actions. Commander holds keys once; hive wires forever.
 
+**Machine-speed money plays:** Sovereign Stay grid locks in **≤30 days** via parallel agents — not 12-month human rollouts. MTR hosts first. Buyback pitch closes. Host upfront funds compound daily until 120/120.
+
 ---
 
 ## Changelog

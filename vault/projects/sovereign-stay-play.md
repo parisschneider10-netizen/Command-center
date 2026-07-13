@@ -15,7 +15,14 @@
 
 ## First sandbox
 
-`POST /api/sovereign-stay/simulate` — KCMO Underdog Rentals LLC, 412 W 12th St
+`POST /api/sovereign-stay/simulate` — any ranked city (not hardcoded KC). **MTR leads first.**
+
+## Machine-speed law
+
+- **30-day grid target** — 120/120 units locked
+- **Easiest city first** — hive scores, Commander does not pick by habit
+- **Buyback = close weapon** — host not losing money → instant yes
+- **Compound daily** — each presale funds next wave same day
 
 ## Ledger
 
