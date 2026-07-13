@@ -40,6 +40,15 @@ HUMAN_HELP_TEMPLATE = {
     ],
 }
 
+WIRE_SARA_TEMPLATE = {
+    "name": "wire_sara",
+    "phases": [
+        {"phase": 1, "title": "HTTPS via sslip.io", "owner": "system", "detail": "Caddy auto-TLS — no domain purchase"},
+        {"phase": 2, "title": "Vapi API wire", "owner": "system", "detail": "PATCH assistant via VAPI_API_KEY"},
+        {"phase": 3, "title": "Voice live", "owner": "commander", "detail": "Call SARA — state intent, system executes"},
+    ],
+}
+
 GENERIC_TEMPLATE = {
     "name": "general_expansion",
     "phases": [
@@ -71,6 +80,7 @@ KC_WORLD_CUP_BLITZ_TEMPLATE = {
 }
 
 INTENT_MATCHERS: list[dict] = [
+    {"keywords": ["wire sara", "connect vapi", "connect sara", "vapi key", "voice live", "machine wire", "obsolete click"], "template": WIRE_SARA_TEMPLATE},
     {"keywords": ["deploy", "vps", "servury", "command deck", "online", "docker"], "template": DEPLOY_TEMPLATE},
     {"keywords": ["welcome basket", "basket", "new host", "welcome kit"], "template": KC_WELCOME_BASKET_TEMPLATE},
     {"keywords": ["world cup", "blitz", "lock 30", "kcmo", "close sale"], "template": KC_WORLD_CUP_BLITZ_TEMPLATE},
@@ -97,23 +107,32 @@ DEFAULT_JUDGMENT_RULES: list[dict] = [
 MICRO_TASK_LIBRARY: dict[str, list[dict]] = {
     "deploy_command_deck": [
         {
-            "title": "Deploy Command Center on Servury VPS",
-            "description": "SSH to VPS, git clone Command-center, docker compose up -d --build. Return portal URL.",
-            "executor": "rentahuman",
-            "budget_usd": 50.0,
-            "tags": ["deploy", "vps", "docker"],
-        },
-        {
-            "title": "Wire Vapi webhook to production API",
-            "description": "Set serverUrl to PUBLIC_BASE_URL/vapi/webhook in Vapi dashboard.",
-            "executor": "agent",
-            "will_priority": 8,
+            "title": "Machine-wire SARA via Vapi API",
+            "description": "POST /api/vapi/machine-wire with VAPI_API_KEY — no dashboard clicks.",
+            "executor": "system",
+            "will_priority": 10,
+            "tags": ["vapi", "machine-wire"],
         },
         {
             "title": "Verify health + portal login",
             "description": "curl /health, login portal, confirm tasks load.",
             "executor": "agent",
             "will_priority": 7,
+        },
+    ],
+    "wire_sara": [
+        {
+            "title": "Machine-wire SARA (HTTPS + Vapi API)",
+            "description": "Auto sslip.io HTTPS + PATCH Vapi assistant. Requires VAPI_API_KEY in .env.",
+            "executor": "system",
+            "will_priority": 10,
+            "tags": ["vapi", "machine-wire", "sara"],
+        },
+        {
+            "title": "Verify SARA voice loop",
+            "description": "Call Vapi number, say briefing, confirm portal activity.",
+            "executor": "agent",
+            "will_priority": 8,
         },
     ],
     "kc_laundry_play": [

@@ -197,7 +197,18 @@ async def execute_intent(
     outcomes: list[dict] = []
 
     for mt in micro_tasks:
-        if mt.executor == "agent":
+        if mt.executor == "system":
+            from app.integrations.machine_wire import machine_wire_sara
+
+            wire = await machine_wire_sara()
+            mt.status = "completed" if wire.get("ok") else "failed"
+            outcomes.append({
+                "micro_task_id": mt.id,
+                "action": "machine_wire_sara",
+                "result": wire,
+            })
+
+        elif mt.executor == "agent":
             priority = TaskPriority.urgent if mt.will_priority >= 8 else TaskPriority.high
             task = await create_task(
                 db,

@@ -50,6 +50,14 @@ class Settings(BaseSettings):
     intent_auto_post_rah: bool = True
     kcmo_max_units: int = 30
     treasury_sales_close_hold_hours: int = 4
+    # Vapi machine-wire (drop API key once — system wires SARA)
+    vapi_api_key: str = ""
+    vapi_assistant_id: str = ""
+    vapi_phone_number_id: str = ""
+    vps_public_ip: str = ""
+    public_https_url: str = ""
+    machine_wire_token: str = ""
+    enable_https_caddy: bool = True
 
     @property
     def cors_origin_list(self) -> list[str]:

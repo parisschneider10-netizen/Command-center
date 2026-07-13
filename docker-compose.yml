@@ -49,6 +49,7 @@ services:
     volumes:
       - ./data:/app/data
       - ./vault:/app/vault
+      - ./docs:/app/docs:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -63,20 +64,19 @@ services:
       - api
     restart: unless-stopped
 
-  # ── Layer 0: HTTPS reverse proxy (uncomment for production) ─
-  # caddy:
-  #   image: caddy:2-alpine
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   volumes:
-  #     - ./Caddyfile:/etc/caddy/Caddyfile
-  #     - caddy_data:/data
-  #   depends_on:
-  #     - api
-  #     - portal
-  #     - n8n
-  #   restart: unless-stopped
+  # ── Layer 0: HTTPS reverse proxy (sslip.io — no domain purchase) ─
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+    depends_on:
+      - api
+      - portal
+    restart: unless-stopped
 
   # ── Comms dev (optional — catches outbound mail locally) ─
   # mailpit:

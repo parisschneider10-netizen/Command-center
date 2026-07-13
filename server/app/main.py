@@ -83,6 +83,9 @@ async def health() -> dict:
     from pathlib import Path
 
     vault_ok = Path(settings.vault_path).exists()
+    from app.integrations.machine_wire import read_wire_status, wire_readiness
+
+    wire = wire_readiness()
     return {
         "status": "ok",
         "service": "command-center",
@@ -93,5 +96,8 @@ async def health() -> dict:
             "comms_configured": bool(settings.comms_imap_host),
             "agent_first": True,
             "expansion_dry_run": settings.expansion_dry_run,
+            "vapi_key": wire.get("vapi_key_configured"),
+            "sara_wired": read_wire_status().get("wired", False),
+            "https_base": wire.get("https_base"),
         },
     }
