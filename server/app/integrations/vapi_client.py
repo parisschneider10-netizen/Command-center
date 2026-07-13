@@ -45,8 +45,8 @@ def _substitute_base(obj: Any, base: str) -> Any:
     return obj
 
 
-def build_assistant_payload(https_base: str) -> dict[str, Any]:
-    """Map repo template → Vapi PATCH body."""
+def build_assistant_payload(https_base: str, *, include_tools: bool = True) -> dict[str, Any]:
+    """Map repo template → Vapi PATCH body (tools live under model, not assistant root)."""
     raw = json.loads(_template_path().read_text())
     data = _substitute_base(raw, https_base.rstrip("/"))
     tools = []
@@ -64,6 +64,17 @@ def build_assistant_payload(https_base: str) -> dict[str, Any]:
                 "server": tool.get("server"),
             }
         )
+    model: dict[str, Any] = {
+        "provider": data.get("model", {}).get("provider", "openai"),
+        "model": data.get("model", {}).get("model", "gpt-4o"),
+        "temperature": data.get("model", {}).get("temperature", 0.3),
+        "messages": [
+            {"role": "system", "content": data.get("systemPrompt", "You are SARA.")},
+        ],
+    }
+    if include_tools and tools:
+        model["tools"] = tools
+
     payload: dict[str, Any] = {
         "name": data.get("name", "SARA — Voice OS"),
         "firstMessage": data.get("firstMessage"),
@@ -72,15 +83,7 @@ def build_assistant_payload(https_base: str) -> dict[str, Any]:
         "maxDurationSeconds": data.get("maxDurationSeconds", 600),
         "server": {"url": f"{https_base.rstrip('/')}/vapi/webhook"},
         "serverMessages": data.get("serverMessages", ["end-of-call-report", "status-update"]),
-        "tools": tools,
-        "model": {
-            "provider": data.get("model", {}).get("provider", "openai"),
-            "model": data.get("model", {}).get("model", "gpt-4o"),
-            "temperature": data.get("model", {}).get("temperature", 0.3),
-            "messages": [
-                {"role": "system", "content": data.get("systemPrompt", "You are SARA.")},
-            ],
-        },
+        "model": model,
     }
     voice = data.get("voice")
     voice_id = (voice or {}).get("voiceId", "")
@@ -141,8 +144,19 @@ async def wire_assistant(https_base: str) -> dict:
         if not assistant_id:
             raise ValueError("Could not resolve assistant id from Vapi")
 
-    payload = build_assistant_payload(https_base)
-    updated = await update_assistant(assistant_id, payload)
+    tools_wired = True
+    try:
+        updated = await update_assistant(
+            assistant_id, build_assistant_payload(https_base, include_tools=True)
+        )
+    except ValueError as exc:
+        # Vapi PATCH rejects assistant-root tools; if model.tools also fails, wire webhook only.
+        if "tools" not in str(exc).lower():
+            raise
+        tools_wired = False
+        updated = await update_assistant(
+            assistant_id, build_assistant_payload(https_base, include_tools=False)
+        )
 
     phone_result = None
     if settings.vapi_phone_number_id:
@@ -159,4 +173,5 @@ async def wire_assistant(https_base: str) -> dict:
         "webhook_url": f"{https_base.rstrip('/')}/vapi/webhook",
         "assistant_name": updated.get("name"),
         "phone_updated": phone_result is not None,
+        "tools_wired": tools_wired,
     }
