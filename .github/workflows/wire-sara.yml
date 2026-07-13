@@ -65,7 +65,7 @@ jobs:
               curl -fsS http://127.0.0.1:8000/health >/dev/null 2>&1 && break
               sleep 5
             done
-            curl -fsS -X POST "http://127.0.0.1:8000/api/vapi/machine-wire" \
+            curl -fsS -X POST "http://127.0.0.1:8000/vapi/machine-wire" \
               -H "X-Machine-Wire-Token: $WIRE_TOKEN" | tee /tmp/wire-result.json
             echo ""
             echo "=== SARA WIRED ==="

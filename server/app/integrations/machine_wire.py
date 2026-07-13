@@ -114,5 +114,5 @@ def wire_readiness() -> dict:
         "https_base": https_base,
         "sslip_hostname": sslip_hostname() if https_base else None,
         "last_wire": status,
-        "machine_wire_endpoint": "/api/vapi/machine-wire",
+        "machine_wire_endpoint": "/vapi/machine-wire",
     }
