@@ -82,8 +82,10 @@ def build_assistant_payload(https_base: str) -> dict[str, Any]:
             "tools": tools,
         },
     }
-    if data.get("voice"):
-        payload["voice"] = data["voice"]
+    voice = data.get("voice")
+    voice_id = (voice or {}).get("voiceId", "")
+    if voice and voice_id and voice_id not in ("YOUR_VOICE_ID", ""):
+        payload["voice"] = voice
     return payload
 
 
@@ -104,7 +106,13 @@ async def update_assistant(assistant_id: str, payload: dict[str, Any]) -> dict:
             headers=_headers(),
             json=payload,
         )
-        response.raise_for_status()
+        if response.status_code >= 400:
+            detail = response.text
+            try:
+                detail = response.json()
+            except Exception:
+                pass
+            raise ValueError(f"Vapi PATCH assistant failed ({response.status_code}): {detail}")
         return response.json()
 
 

@@ -5,10 +5,11 @@ WORKDIR /app
 RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY server/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app ./app
+COPY server/app ./app
+COPY docs /app/docs
 RUN mkdir -p /app/data
 
 ENV DATABASE_URL=sqlite+aiosqlite:////app/data/command_center.db

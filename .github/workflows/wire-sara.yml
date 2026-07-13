@@ -65,11 +65,19 @@ jobs:
               curl -fsS http://127.0.0.1:8000/health >/dev/null 2>&1 && break
               sleep 5
             done
-            curl -fsS -X POST "http://127.0.0.1:8000/vapi/machine-wire" \
-              -H "X-Machine-Wire-Token: $WIRE_TOKEN" | tee /tmp/wire-result.json
+            HTTP_CODE=$(curl -sS -o /tmp/wire-result.json -w "%{http_code}" \
+              -X POST "http://127.0.0.1:8000/vapi/machine-wire" \
+              -H "X-Machine-Wire-Token: $WIRE_TOKEN")
+            echo "machine-wire HTTP $HTTP_CODE"
+            cat /tmp/wire-result.json
             echo ""
-            echo "=== SARA WIRED ==="
-            cat vault/commander/vapi-wire.json 2>/dev/null || cat /tmp/wire-result.json
+            if [ "$HTTP_CODE" = "200" ] && grep -q '"ok":true' /tmp/wire-result.json 2>/dev/null; then
+              echo "=== SARA WIRED ==="
+              cat vault/commander/vapi-wire.json 2>/dev/null || cat /tmp/wire-result.json
+            else
+              echo "=== WIRE FAILED — see JSON above ==="
+              exit 1
+            fi
         env:
           VAPI_API_KEY: ${{ secrets.VAPI_API_KEY }}
           VAPI_ASSISTANT_ID: ${{ secrets.VAPI_ASSISTANT_ID }}

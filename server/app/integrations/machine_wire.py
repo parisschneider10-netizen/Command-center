@@ -82,10 +82,24 @@ async def machine_wire_sara() -> dict:
             "next_step": "Actions → Wire SARA (machine speed)",
         }
 
-    https_base = resolve_https_base()
+    try:
+        https_base = resolve_https_base()
+    except ValueError as exc:
+        return {"ok": False, "error": str(exc)}
+
     hostname = urlparse(https_base).hostname or ""
 
-    result = await wire_assistant(https_base)
+    try:
+        result = await wire_assistant(https_base)
+    except FileNotFoundError as exc:
+        return {
+            "ok": False,
+            "error": str(exc),
+            "hint": "Ensure docs/vapi-assistant.json exists on VPS (git pull + docs volume mount)",
+        }
+    except Exception as exc:
+        return {"ok": False, "error": str(exc), "https_base": https_base}
+
     status = {
         **result,
         "wired": True,
