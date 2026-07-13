@@ -7,6 +7,7 @@ from app.bridge.commands import execute_command, normalize_github_issue_body, pr
 from app.comms.email import comms_configured, sync_inbox
 from app.config import settings
 from app.database import get_db
+from app.doctrine import doctrine_snapshot
 
 router = APIRouter(prefix="/api/bridge", tags=["communication-bridge"])
 
@@ -42,6 +43,7 @@ async def bridge_status(_: str = Depends(get_current_user)) -> dict:
     """Which communication channels are live right now."""
     senders = _allowed_senders()
     return {
+        "doctrine": doctrine_snapshot(settings.vault_path),
         "channels": {
             "github_issues": {
                 "live": True,
@@ -81,9 +83,8 @@ async def bridge_status(_: str = Depends(get_current_user)) -> dict:
         },
         "before_command_deck_online": [
             "1. GitHub Issue @cursor (works from phone, no VPS needed)",
-            "2. cursor.com/agents → paste build order",
-            "3. Call SARA once Vapi webhook points to VPS",
-            "4. Merge PR #1 → deploy docker compose on Servury VPS",
+            "2. GitHub Secrets once → Actions Deploy + Wire SARA (no SSH, no dashboards)",
+            "3. Call SARA once machine-wire completes",
         ],
         "money_play_after_deploy": [
             "Sovereign Stay presale → POST /api/sovereign-stay/presale (sandbox instant treasury)",

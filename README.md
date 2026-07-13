@@ -4,6 +4,8 @@ A **self-owned, agent-first empire** for one person at scale: voice command, age
 
 **North star:** [docs/EMPIRE_VISION.md](docs/EMPIRE_VISION.md)
 
+**Binding law (all agents):** [vault/commander/operating-contract.md](vault/commander/operating-contract.md) — Commander states intent; hive executes; keys + nuclear only.
+
 ## The stack at a glance
 
 | Layer | Components | Status |

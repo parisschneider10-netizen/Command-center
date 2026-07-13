@@ -14,6 +14,8 @@
 
 ## Agent autonomy (FULL — no human gate)
 
+**Read first:** `vault/commander/operating-contract.md` (binding law — v1.0)
+
 Agents MAY without asking anyone:
 - Research anything legal
 - Draft all content (email, docs, posts, code)
@@ -74,6 +76,9 @@ Use humans ONLY when:
 
 **Never use humans because agents "shouldn't" do something digital. Agents should.**
 
+**Never ask Commander to click dashboards** for deploy, Vapi wire, HTTPS, or DNS.
+Use machine APIs + GitHub Actions. Commander holds keys once; hive wires forever.
+
 ---
 
 ## Changelog
@@ -81,3 +86,4 @@ Use humans ONLY when:
 | Date | Change |
 |------|--------|
 | 2026-07-03 | Initial will manifest — agent-first empire |
+| 2026-07-13 | Operating contract v1.0 — no dashboard/setup Commander busywork |

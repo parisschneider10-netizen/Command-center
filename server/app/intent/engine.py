@@ -123,6 +123,7 @@ def _direction_statement(template_name: str, intent_text: str, human_cap: dict) 
     caps = human_cap["capacity"]
     return (
         f"Goal: {intent_text.strip()[:200]}. "
+        f"Doctrine: agents first, machine APIs, humans actuators only, Commander nuclear only. "
         f"Hive handles digital execution. Human firewall covers judgment/physical. "
         f"Float supports {caps['standard_gigs_35_usd']} standard gigs now. "
         f"You only intervene on nuclear items in the plan."
