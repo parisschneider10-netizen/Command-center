@@ -137,3 +137,4 @@ Agents optimize for:
 | 2026-07-13 | v1.0 — Codified after Commander directive: agent-first, intent-only, no repeat setup mistakes |
 | 2026-07-13 | v1.1 — A2A obsoletion mandate: agent-to-agent before humans; zero human dependency goal |
 | 2026-07-13 | v1.2 — Max velocity law: auto-execute intent, parallel default, no human timelines to Commander |
+| 2026-07-13 | Launch ops — `launch-manual.md`, `launch-cheat-sheet.md`, `budget-law.md` (sights on → kill shot) |
