@@ -15,8 +15,10 @@ from app.integrations.n8n import trigger_n8n
 from app.ready_room.scanner import scan_pending_intents
 from app.ready_room.service import (
     list_ready_room_notes,
+    process_handwritten_note,
     ready_room_root,
     save_handwritten_extraction,
+    scan_handwritten_inbox,
     write_intent_note,
 )
 from app.services import log_activity
@@ -30,6 +32,10 @@ class ReadyRoomIntentIn(BaseModel):
     auto_execute: bool = True
     title: str | None = None
     body: str = ""
+
+
+class HandwrittenPathIn(BaseModel):
+    path: str = Field(description="Vault-relative path, e.g. ready-room/handwritten/note.jpg")
 
 
 @router.get("/status")
@@ -86,6 +92,27 @@ async def scan_ready_room(
     Wire n8n cron: POST /api/ready-room/scan every 5 min.
     """
     result = await scan_pending_intents(db)
+    return {"ok": True, **result}
+
+
+@router.post("/handwritten/path")
+async def ingest_handwritten_path(
+    path: str,
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_user),
+) -> dict:
+    """
+    Process image already in vault (Commander's process_handwritten_note flow).
+    Path relative to vault, e.g. ready-room/handwritten/note.jpg
+    """
+    full = Path(settings.vault_path) / path
+    if not full.exists():
+        raise HTTPException(status_code=404, detail="Image not found in vault")
+    try:
+        result = await process_handwritten_note(full)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    await log_activity(db, "ready_room_handwritten", path, result)
     return {"ok": True, **result}
 
 

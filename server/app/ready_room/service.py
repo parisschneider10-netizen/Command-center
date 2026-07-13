@@ -15,6 +15,13 @@ from app.config import settings
 READY_ROOM_FOLDERS = ("inbox", "intent", "processed", "archive", "handwritten")
 
 
+def vision_api_key() -> str:
+    """OPENAI_API_KEY or Commander's LLM_API_KEY — funds vision ingest when treasury clears."""
+    import os
+
+    return (settings.llm_api_key or settings.openai_api_key or os.getenv("LLM_API_KEY", "")).strip()
+
+
 def ready_room_root() -> Path:
     root = Path(settings.vault_path) / "ready-room"
     root.mkdir(parents=True, exist_ok=True)
@@ -192,10 +199,11 @@ If mode cannot be determined, use mode: drill. Never invent financial numbers no
 
 
 async def extract_handwritten_note(image_bytes: bytes, mime: str = "image/jpeg") -> str:
-    """Vision LLM extraction — uses OPENAI_API_KEY from settings."""
-    if not settings.openai_api_key:
+    """Vision LLM — your process_handwritten_note step 2+3 (correct API endpoint)."""
+    api_key = vision_api_key()
+    if not api_key:
         raise ValueError(
-            "OPENAI_API_KEY missing — add to .env for Ready Room handwritten ingest"
+            "LLM_API_KEY or OPENAI_API_KEY missing — add when treasury clears vision spend"
         )
     b64 = base64.b64encode(image_bytes).decode("utf-8")
     payload = {
@@ -218,7 +226,7 @@ async def extract_handwritten_note(image_bytes: bytes, mime: str = "image/jpeg")
         response = await client.post(
             "https://api.openai.com/v1/chat/completions",
             headers={
-                "Authorization": f"Bearer {settings.openai_api_key}",
+                "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
             },
             json=payload,
@@ -260,4 +268,102 @@ async def save_handwritten_extraction(
         "intent_path": str(intent_path.relative_to(Path(settings.vault_path))) if intent_path else None,
         "intent": meta.get("intent", ""),
         "mode": meta.get("mode", "drill"),
+    }
+
+
+def _ingested_marker(image_path: Path) -> Path:
+    return image_path.with_suffix(image_path.suffix + ".ingested")
+
+
+def append_layer1_ledger(event: dict) -> Path:
+    """Layer 1 database ledger — append-only JSONL (your step 3 population target)."""
+    import json
+
+    ledger = Path(settings.sovereign_ledger_path)
+    ledger.parent.mkdir(parents=True, exist_ok=True)
+    row = {
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "layer": 1,
+        "source": "ready-room",
+        **event,
+    }
+    with ledger.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(row, default=str) + "\n")
+    return ledger
+
+
+async def process_handwritten_note(image_path: str | Path) -> dict:
+    """
+    Commander's process_handwritten_note — Ready Room vault ingest.
+
+    1. Encode image base64 (internal)
+    2. Vision LLM extract → structured markdown
+    3. Save Obsidian archive + Layer 1 ledger line + intent queue
+    """
+    path = Path(image_path)
+    if not path.exists():
+        raise FileNotFoundError(f"Ready Room image not found: {path}")
+
+    suffix = path.suffix.lower()
+    mime = "image/jpeg" if suffix in (".jpg", ".jpeg") else "image/png" if suffix == ".png" else "image/jpeg"
+    data = path.read_bytes()
+
+    extracted = await extract_handwritten_note(data, mime=mime)
+
+    # Obsidian archive — note_extracted.md beside the scan (your output_path pattern)
+    obsidian_out = path.parent / f"{path.stem}_extracted.md"
+    obsidian_out.write_text(extracted, encoding="utf-8")
+
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d-%H%M%S")
+    slug = slugify(path.stem)
+    root = ready_room_root()
+    md_path = root / "processed" / f"{stamp}-{slug}-extracted.md"
+    md_path.write_text(extracted, encoding="utf-8")
+
+    meta, _ = parse_frontmatter(extracted)
+    intent_path = None
+    if meta.get("type") == "intent" and meta.get("intent"):
+        intent_path = root / "intent" / f"{stamp}-{slug}-from-handwritten.md"
+        intent_path.write_text(extracted, encoding="utf-8")
+
+    ledger_path = append_layer1_ledger(
+        {
+            "event": "handwritten_ingest",
+            "image": str(path.name),
+            "extracted": str(md_path.name),
+            "intent": meta.get("intent", ""),
+            "mode": meta.get("mode", "drill"),
+        }
+    )
+    _ingested_marker(path).write_text(md_path.name, encoding="utf-8")
+
+    return {
+        "image_path": str(path),
+        "obsidian_extracted": str(obsidian_out),
+        "extracted_path": str(md_path.relative_to(Path(settings.vault_path))),
+        "intent_path": str(intent_path.relative_to(Path(settings.vault_path))) if intent_path else None,
+        "ledger_path": str(ledger_path),
+        "intent": meta.get("intent", ""),
+        "mode": meta.get("mode", "drill"),
+    }
+
+
+async def scan_handwritten_inbox() -> dict:
+    """Auto-ingest new images in ready-room/handwritten/ (Obsidian drop folder)."""
+    root = ready_room_root() / "handwritten"
+    outcomes = []
+    for path in sorted(root.glob("*")):
+        if path.suffix.lower() not in (".jpg", ".jpeg", ".png"):
+            continue
+        if _ingested_marker(path).exists():
+            continue
+        try:
+            result = await process_handwritten_note(path)
+            outcomes.append({"file": path.name, "ok": True, **result})
+        except Exception as exc:
+            outcomes.append({"file": path.name, "ok": False, "error": str(exc)})
+    return {
+        "handwritten_scanned": len(outcomes),
+        "ok": sum(1 for o in outcomes if o.get("ok")),
+        "outcomes": outcomes,
     }

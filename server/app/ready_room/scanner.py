@@ -9,7 +9,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.integrations.n8n import trigger_n8n
 from app.intent.engine import execute_intent, plan_intent
-from app.ready_room.service import mark_note_status, parse_frontmatter, ready_room_root
+from app.ready_room.service import (
+    mark_note_status,
+    parse_frontmatter,
+    ready_room_root,
+    scan_handwritten_inbox,
+)
 from app.services import log_activity
 from app.velocity import should_auto_execute_intent
 
@@ -17,8 +22,10 @@ from app.velocity import should_auto_execute_intent
 async def scan_pending_intents(db: AsyncSession) -> dict:
     """
     Process all ready-room/intent/*.md with status: pending.
-    Commander operates via Obsidian — sync vault → call scan (or n8n cron).
+    Also ingests new handwritten images first (Obsidian drop folder).
     """
+    handwritten = await scan_handwritten_inbox()
+
     root = ready_room_root()
     intent_dir = root / "intent"
     outcomes = []
@@ -78,6 +85,7 @@ async def scan_pending_intents(db: AsyncSession) -> dict:
             outcomes.append({"file": path.name, "ok": False, "error": str(exc)})
 
     summary = {
+        "handwritten": handwritten,
         "scanned": len(outcomes),
         "ok": sum(1 for o in outcomes if o.get("ok")),
         "outcomes": outcomes,
