@@ -92,6 +92,42 @@ def build_assistant_payload(https_base: str, *, include_tools: bool = True) -> d
     return payload
 
 
+async def get_assistant(assistant_id: str) -> dict:
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        response = await client.get(
+            f"{VAPI_BASE}/assistant/{assistant_id}",
+            headers=_headers(),
+        )
+        if response.status_code >= 400:
+            detail = response.text
+            try:
+                detail = response.json()
+            except Exception:
+                pass
+            raise ValueError(f"Vapi GET assistant failed ({response.status_code}): {detail}")
+        return response.json()
+
+
+def find_replit_urls(obj: Any) -> list[str]:
+    """Recursively find replit.dev / replit.app URLs in Vapi assistant JSON."""
+    found: list[str] = []
+
+    def walk(value: Any) -> None:
+        if isinstance(value, str):
+            lower = value.lower()
+            if "replit.dev" in lower or "replit.app" in lower:
+                found.append(value)
+        elif isinstance(value, dict):
+            for v in value.values():
+                walk(v)
+        elif isinstance(value, list):
+            for item in value:
+                walk(item)
+
+    walk(obj)
+    return sorted(set(found))
+
+
 async def list_phone_numbers() -> list[dict]:
     async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.get(f"{VAPI_BASE}/phone-number", headers=_headers())

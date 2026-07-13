@@ -55,6 +55,24 @@ async def vapi_status(_: str = Depends(get_current_user)) -> dict:
                 readiness["sara_phone"] = format_phone_number(numbers[0])
         except Exception as exc:
             readiness["phone_lookup_error"] = str(exc)
+
+    assistant_id = settings.vapi_assistant_id.strip()
+    if not assistant_id:
+        assistant_id = (readiness.get("last_wire") or {}).get("assistant_id", "")
+    if settings.vapi_api_key and assistant_id:
+        try:
+            from app.integrations.vapi_client import find_replit_urls, get_assistant
+
+            assistant = await get_assistant(assistant_id)
+            replit_urls = find_replit_urls(assistant)
+            readiness["overwatch_migration"] = {
+                "assistant_id": assistant_id,
+                "replit_urls_found": replit_urls,
+                "replit_blocked": len(replit_urls) > 0,
+                "note": "Replit suspended — salvage from snapshot + GitHub export",
+            }
+        except Exception as exc:
+            readiness["overwatch_migration_error"] = str(exc)
     return {"ok": True, **readiness}
 
 

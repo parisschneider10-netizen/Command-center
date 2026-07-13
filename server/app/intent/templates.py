@@ -89,8 +89,19 @@ SOVEREIGN_STAY_TEMPLATE = {
     ],
 }
 
+OVERWATCH_MIGRATION_TEMPLATE = {
+    "name": "overwatch_replit_migration",
+    "phases": [
+        {"phase": 1, "title": "Extract", "owner": "agent", "detail": "Dump Vapi assistant + hunt replit.dev URLs; clone GitHub export if linked"},
+        {"phase": 2, "title": "Inventory", "owner": "agent", "detail": "Map Overwatch routes/UI to portal + /api/* in Command Center"},
+        {"phase": 3, "title": "Port", "owner": "agent", "detail": "Migrate useful logic — vault/projects/overwatch-replit-migration.md"},
+        {"phase": 4, "title": "Retire Replit", "owner": "system", "detail": "Point Vapi tools at Servury only; Replit dependency zero"},
+    ],
+}
+
 INTENT_MATCHERS: list[dict] = [
     {"keywords": ["wire sara", "connect vapi", "connect sara", "vapi key", "voice live", "machine wire", "obsolete click"], "template": WIRE_SARA_TEMPLATE},
+    {"keywords": ["overwatch", "replit", "migrate overwatch", "command center website"], "template": OVERWATCH_MIGRATION_TEMPLATE},
     {"keywords": ["sovereign stay", "sovereign", "v1_core", "egoist", "40 cities", "3 units"], "template": SOVEREIGN_STAY_TEMPLATE},
     {"keywords": ["deploy", "vps", "servury", "command deck", "online", "docker"], "template": DEPLOY_TEMPLATE},
     {"keywords": ["welcome basket", "basket", "new host", "welcome kit"], "template": KC_WELCOME_BASKET_TEMPLATE},
@@ -287,6 +298,29 @@ MICRO_TASK_LIBRARY: dict[str, list[dict]] = {
             "executor": "rentahuman",
             "budget_usd": 38.0,
             "tags": ["welcome-basket", "kcmo"],
+        },
+    ],
+    "overwatch_replit_migration": [
+        {
+            "title": "Dump Vapi assistant config for Replit URLs",
+            "description": "GET assistant from Vapi API; save vault/commander/overwatch-vapi-snapshot.json",
+            "executor": "system",
+            "will_priority": 10,
+            "tags": ["overwatch", "replit", "vapi", "migration"],
+        },
+        {
+            "title": "Inventory Overwatch vs Command Center",
+            "description": "Diff routes/UI against portal + /api. Document gaps in vault/projects/overwatch-replit-migration.md",
+            "executor": "agent",
+            "will_priority": 9,
+            "tags": ["overwatch", "migration"],
+        },
+        {
+            "title": "Port high-value Overwatch features",
+            "description": "Migrate useful dashboards, tools, prompts into this repo — Servury is source of truth.",
+            "executor": "agent",
+            "will_priority": 8,
+            "tags": ["overwatch", "port"],
         },
     ],
     "general_expansion": [
