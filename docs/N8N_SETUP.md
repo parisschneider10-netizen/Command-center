@@ -19,6 +19,9 @@ Create one n8n workflow per event. Each uses a **Webhook** trigger node.
 |------------|----------------|------------------|
 | `task-created` | Voice creates a task | Log, notify, queue for agent |
 | `vault-inbox` | Note dumped to Obsidian inbox | Summarize, tag, move to research/ |
+| `ready-room-intent` | New intent in ready-room/intent | Optional: trigger scan |
+| `ready-room-scan` | Scan completed | Log outcomes |
+| `ready-room-handwritten` | Handwritten note ingested | Queue scan |
 | `research` | Manual voice trigger | Call AutoGen + Brave Search (Phase 3) |
 
 ### Example: task-created workflow

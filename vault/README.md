@@ -11,7 +11,12 @@ vault/
 ├── research/     ← Agent research output (Brave, AutoGen, etc.)
 ├── decisions/    ← Decision context and outcomes
 ├── projects/     ← One folder per empire project
-└── templates/    ← Note templates for consistency
+├── templates/    ← Note templates for consistency
+└── ready-room/   ← Obsidian intent command center (Commander operates here)
+    ├── intent/       ← Pending intents (scan → hive)
+    ├── handwritten/  ← Photo scans of ops notes
+    ├── processed/    ← Vision extractions
+    └── archive/      ← Executed intents
 ```
 
 ## Sync to your devices

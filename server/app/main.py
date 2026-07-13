@@ -24,6 +24,7 @@ from app.routes.ground_force import router as ground_force_router
 from app.routes.hive import router as hive_router
 from app.routes.kc_blitz import router as kc_blitz_router
 from app.routes.sovereign_stay import router as sovereign_stay_router
+from app.routes.ready_room import router as ready_room_router
 from app.routes.overwatch import router as overwatch_router
 from app.routes.welcome_basket import router as welcome_basket_router
 from app.routes.laundry import router as laundry_router
@@ -84,6 +85,7 @@ app.include_router(welcome_basket_router)
 app.include_router(kc_blitz_router)
 app.include_router(sovereign_stay_router)
 app.include_router(overwatch_router)
+app.include_router(ready_room_router)
 app.include_router(hive_router)
 app.include_router(ground_force_router)
 

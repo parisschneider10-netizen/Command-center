@@ -145,6 +145,7 @@ def doctrine_snapshot(vault_path: str = "./vault") -> dict:
         "max_velocity_file": "vault/commander/max-velocity.md",
         "launch_manual": "vault/commander/launch-manual.md",
         "launch_cheat_sheet": "vault/commander/launch-cheat-sheet.md",
+        "ready_room_manual": "vault/commander/ready-room-manual.md",
         "budget_law": "vault/commander/budget-law.md",
         "sovereign_grid_days_target": 30,
         "contract_file": "vault/commander/operating-contract.md",

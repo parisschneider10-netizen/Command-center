@@ -130,7 +130,11 @@ async def doctor_scan(
         if released:
             repairs.append(f"float_cleared_{len(released)}_holds")
 
-    status = await doctor_status(db)
+        from app.ready_room.scanner import scan_pending_intents
+
+        rr = await scan_pending_intents(db)
+        if rr.get("ok"):
+            repairs.append(f"ready_room_scanned_{rr.get('scanned', 0)}")
     escalations: list[int] = []
 
     for check in status["checks"]:

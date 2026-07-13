@@ -81,3 +81,18 @@ DRILL → health OK → sara_wired → intent dry run → KILL SHOT → presale 
 ## Full manual
 
 `vault/commander/launch-manual.md`
+
+---
+
+## Ready Room (Obsidian only)
+
+| Step | Action |
+|------|--------|
+| 1 | Obsidian → template `ready-room-intent` → save to `ready-room/intent/` |
+| 2 | `mode: drill` or `mode: live` |
+| 3 | Sync vault → VPS |
+| 4 | `POST /api/ready-room/scan` or doctor cron |
+
+**Handwritten:** photo → `ready-room/handwritten/` → `python scripts/process-ready-room-note.py …`
+
+Manual: `vault/commander/ready-room-manual.md`

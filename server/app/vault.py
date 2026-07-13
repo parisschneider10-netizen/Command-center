@@ -12,6 +12,11 @@ def vault_root() -> Path:
     root.mkdir(parents=True, exist_ok=True)
     for sub in ("inbox", "tasks", "research", "decisions", "projects", "templates"):
         (root / sub).mkdir(exist_ok=True)
+    # Ready Room — Obsidian intent command center
+    rr = root / "ready-room"
+    rr.mkdir(exist_ok=True)
+    for sub in ("inbox", "intent", "processed", "archive", "handwritten"):
+        (rr / sub).mkdir(exist_ok=True)
     return root
 
 
