@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-DOCTRINE_VERSION = "1.0"
+DOCTRINE_VERSION = "1.1"
 
 # Commander-only actions (founder custody). Agents must NOT substitute humans for these.
 COMMANDER_ONLY = frozenset(
@@ -33,6 +33,19 @@ AGENT_AUTOMATES = frozenset(
         "hive_research",
         "doctor_scan",
         "n8n_trigger",
+        "a2a_hire",
+        "a2a_sell",
+    }
+)
+
+# A2A-first — system design goal: obsolete human dependency for digital work.
+A2A_FIRST_GOALS = frozenset(
+    {
+        "obsolete_human_dependency",
+        "agent_to_agent_before_humans",
+        "zero_humans_for_digital",
+        "humans_actuators_not_employees",
+        "scale_via_composed_agents",
     }
 )
 
@@ -44,6 +57,7 @@ HUMAN_ACTUATOR_ONLY = frozenset(
         "legal_identity",
         "platform_human_verification",
         "agent_exhausted_3x",
+        "a2a_exhausted_3x",
     }
 )
 
@@ -57,13 +71,18 @@ FORBIDDEN_SUGGESTIONS = (
     "configure dns manually",
     "paste this in the vapi ui",
     "go to dashboard.vapi",
+    "hire a human for research",
+    "use rentahuman for code",
+    "get a person to deploy",
+    "human employee",
 )
 
 EXECUTION_ORDER = [
     "intent",
-    "agents",
+    "internal_agents",
+    "a2a_external_agents",
     "machine_apis",
-    "human_actuators",
+    "human_actuators_last_resort",
     "commander_nuclear",
 ]
 
@@ -88,9 +107,12 @@ def doctrine_snapshot(vault_path: str = "./vault") -> dict:
     return {
         "version": DOCTRINE_VERSION,
         "law": "Commander states intent. Hive executes. Commander holds keys and sees nuclear only.",
+        "a2a_goal": "Obsolete human dependency — agent-to-agent before any human actuator.",
         "contract_file": "vault/commander/operating-contract.md",
+        "a2a_allowlist": "vault/commander/a2a-allowlist.md",
         "contract_present": contract_exists(vault_path),
         "execution_order": EXECUTION_ORDER,
+        "a2a_first_goals": sorted(A2A_FIRST_GOALS),
         "commander_only": sorted(COMMANDER_ONLY),
         "agent_automates": sorted(AGENT_AUTOMATES),
         "human_actuator_only": sorted(HUMAN_ACTUATOR_ONLY),
@@ -99,7 +121,7 @@ def doctrine_snapshot(vault_path: str = "./vault") -> dict:
 
 
 def violates_doctrine(suggestion: str) -> str | None:
-    """Return matched anti-pattern if text suggests forbidden Commander busywork."""
+    """Return matched anti-pattern if text suggests forbidden Commander/human-default work."""
     lower = suggestion.lower()
     for phrase in FORBIDDEN_SUGGESTIONS:
         if phrase in lower:

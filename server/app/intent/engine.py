@@ -123,7 +123,7 @@ def _direction_statement(template_name: str, intent_text: str, human_cap: dict) 
     caps = human_cap["capacity"]
     return (
         f"Goal: {intent_text.strip()[:200]}. "
-        f"Doctrine: agents first, machine APIs, humans actuators only, Commander nuclear only. "
+        f"Doctrine: A2A obsoletion goal — internal agents + A2A before humans. "
         f"Hive handles digital execution. Human firewall covers judgment/physical. "
         f"Float supports {caps['standard_gigs_35_usd']} standard gigs now. "
         f"You only intervene on nuclear items in the plan."
@@ -255,6 +255,55 @@ async def execute_intent(
             })
 
         elif mt.executor == "rentahuman":
+            from app.a2a.resolver import classify_work
+            from app.a2a.service import route_digital_work
+
+            classification = classify_work(mt.title, mt.description, mt.tags)
+
+            if settings.a2a_prefer_over_humans and classification["prefer_a2a"]:
+                routed = await route_digital_work(
+                    db,
+                    title=mt.title,
+                    description=mt.description,
+                    tags=mt.tags,
+                    will_priority=mt.will_priority or 7,
+                    capability="intent_micro_task",
+                )
+                if routed.get("routed") in ("a2a", "agent_queue"):
+                    mt.status = f"{routed['routed']}_routed"
+                    outcomes.append({
+                        "micro_task_id": mt.id,
+                        "action": routed["routed"],
+                        "human_skipped": True,
+                        "classification": classification,
+                        "result": routed,
+                    })
+                    await db.commit()
+                    continue
+
+            if not classification["human_required"]:
+                task = await create_task(
+                    db,
+                    TaskCreate(
+                        title=mt.title,
+                        description=mt.description,
+                        priority=TaskPriority.high,
+                        source="intent_a2a_doctrine",
+                        will_priority=mt.will_priority or 7,
+                        open_for_agents=True,
+                    ),
+                )
+                mt.status = "agent_queued_no_human"
+                outcomes.append({
+                    "micro_task_id": mt.id,
+                    "action": "agent_queue",
+                    "human_skipped": True,
+                    "task_id": task.id,
+                    "doctrine": "Digital work — humans not used per A2A obsoletion goal.",
+                })
+                await db.commit()
+                continue
+
             budget = mt.budget_usd or settings.guardian_per_task_cap
             if auto_rah:
                 rah = await create_bounty(

@@ -51,6 +51,8 @@ Agents MUST NOT (escalate to nuclear queue, not phone Commander):
 ## Success metrics (agents optimize for these)
 
 - Tasks completed without Commander involvement
+- **A2A events rising, human events falling** (`GET /api/a2a/goals`)
+- **Zero humans for digital work** — obsoletion is the design goal
 - Inbox zero via agent triage
 - Vault inbox processed within 24h
 - Revenue-generating tasks prioritized over busywork
@@ -66,9 +68,9 @@ Agents MUST research state-of-the-art **sovereign** equipment for manifest items
 
 Update vendor candidates via API. Commander approves purchases when `funded`.
 
-## Human utility (last resort for agents)
+## Human utility (last resort — being obsoleted)
 
-Use humans ONLY when:
+Use humans ONLY when A2A + internal agents cannot:
 - Physical presence required
 - Reputation requires a trusted face/voice
 - Platform blocks automation (CAPTCHA, verified human)

@@ -90,11 +90,8 @@ SOVEREIGN_STAY_TEMPLATE = {
 }
 
 INTENT_MATCHERS: list[dict] = [
-<<<<<<< HEAD
-    {"keywords": ["sovereign stay", "sovereign", "v1_core", "egoist", "40 cities", "3 units"], "template": SOVEREIGN_STAY_TEMPLATE},
-=======
     {"keywords": ["wire sara", "connect vapi", "connect sara", "vapi key", "voice live", "machine wire", "obsolete click"], "template": WIRE_SARA_TEMPLATE},
->>>>>>> 32924fe (Machine-wire SARA: Vapi API key once, zero dashboard clicks)
+    {"keywords": ["sovereign stay", "sovereign", "v1_core", "egoist", "40 cities", "3 units"], "template": SOVEREIGN_STAY_TEMPLATE},
     {"keywords": ["deploy", "vps", "servury", "command deck", "online", "docker"], "template": DEPLOY_TEMPLATE},
     {"keywords": ["welcome basket", "basket", "new host", "welcome kit"], "template": KC_WELCOME_BASKET_TEMPLATE},
     {"keywords": ["world cup", "blitz", "lock 30", "kcmo", "close sale"], "template": KC_WORLD_CUP_BLITZ_TEMPLATE},

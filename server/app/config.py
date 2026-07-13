@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     n8n_webhook_base_url: str = ""
     brave_search_api_key: str = ""
     rentahuman_api_key: str = ""
+    a2a_prefer_over_humans: bool = True
+    a2a_daily_cap_usd: float = 100.0
+    human_dependency_target_pct: float = 0.0
     commander_daily_budget_cap: float = 100.0
     guardian_per_task_cap: float = 25.0
     comms_imap_host: str = ""
@@ -50,7 +53,6 @@ class Settings(BaseSettings):
     intent_auto_post_rah: bool = True
     kcmo_max_units: int = 30
     treasury_sales_close_hold_hours: int = 4
-<<<<<<< HEAD
     sovereign_target_cities: int = 40
     sovereign_units_per_city: int = 3
     sovereign_upfront_fee_cents: int = 15000
@@ -67,7 +69,6 @@ class Settings(BaseSettings):
     treasury_crypto_asset: str = "USDC"
     treasury_crypto_auto_payout_closer: bool = True
     sovereign_payment_mode: str = "auto"
-=======
     # Vapi machine-wire (drop API key once — system wires SARA)
     vapi_api_key: str = ""
     vapi_assistant_id: str = ""
@@ -76,7 +77,6 @@ class Settings(BaseSettings):
     public_https_url: str = ""
     machine_wire_token: str = ""
     enable_https_caddy: bool = True
->>>>>>> 32924fe (Machine-wire SARA: Vapi API key once, zero dashboard clicks)
 
     @property
     def cors_origin_list(self) -> list[str]:
