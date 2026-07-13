@@ -340,14 +340,24 @@ async def tool_escalate_to_human(
             message="Over budget. Queued for Commander review. Not calling.",
             data={"escalation_id": escalation.id, "level": "commander"},
         )
+    from app.escalation import route_to_human_firewall
+
+    route = await route_to_human_firewall(db, escalation, budget=body.budget)
     await trigger_n8n(
         "human-escalation",
-        {"escalation_id": escalation.id, "title": body.title},
+        {"escalation_id": escalation.id, "title": body.title, **route},
     )
+    routed = route.get("routed", "firewall")
+    if routed == "guardian":
+        msg = f"Firewall: {route.get('guardian')}. Commander not notified."
+    elif routed == "rentahuman":
+        msg = "Human firewall bounty posted. Commander not notified."
+    else:
+        msg = "Queued in human firewall. Commander not notified."
     return VoiceToolResponse(
         success=True,
-        message="Human layer engaged. Commander not notified.",
-        data={"escalation_id": escalation.id, "level": "human"},
+        message=msg,
+        data={"escalation_id": escalation.id, "level": "human", **route},
     )
 
 

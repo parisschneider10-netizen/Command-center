@@ -1,0 +1,61 @@
+{
+  "project_name": "Sovereign_OS_Alpha",
+  "repository": "Command-center",
+  "architecture_type": "Hybrid_Classical_Quantum_Agentic",
+  "vision_statement": "Compress urban geography into macro-planetary nodes, automating extraction and risk mitigation via an autonomous agentic workforce. One Sovereign Core. Zero human dependency for digital work.",
+  "commander": {
+    "title": "Sovereign Core",
+    "role": "Intent only — keys, nuclear, public brand",
+    "voice_line": "+19713820038",
+    "portal": "https://157-254-194-89.sslip.io"
+  },
+  "system_components": {
+    "core_orchestrator": {
+      "path": "server/app/",
+      "purpose": "FastAPI command pipeline — intent engine, doctrine, velocity, routing to portal and voice OS."
+    },
+    "quantum_telemetry_layer": {
+      "path": "server/app/integrations/",
+      "purpose": "External API interfaces (Vapi bridge, n8n, GHL, Servury). QRNG/quantum stubs when treasury clears."
+    },
+    "agentic_workforce_factory": {
+      "path": "agents/",
+      "purpose": "AutoGen, LiveKit, Skyvern workers — scrape, analyze, operate without human friction."
+    },
+    "synthetic_council_core": {
+      "path": "server/app/hive/",
+      "purpose": "Empire research + A2A resolver — digital work before humans; council expands with treasury."
+    },
+    "human_firewall": {
+      "path": "server/app/escalation.py",
+      "purpose": "Physical/judgment walls only — guardians + RentAHuman. Commander not notified."
+    },
+    "planetary_nodes": {
+      "path": "server/app/value_node/",
+      "purpose": "Sovereign Stay, expansion, KC blitz — cities as planetary nodes, 3 units each."
+    },
+    "macro_starmap_hud": {
+      "path": "portal/",
+      "purpose": "Command deck UI — tasks, treasury, escalations, nuclear queue."
+    },
+    "sovereign_vault": {
+      "path": "vault/",
+      "purpose": "Doctrine, will manifest, acquisition manifest, Obsidian sync."
+    },
+    "biometric_twin_telemetry": {
+      "path": "vault/commander/",
+      "purpose": "Commander optimization data — future multi-omics ingest."
+    }
+  },
+  "execution_law": {
+    "max_velocity": true,
+    "intent_auto_execute": true,
+    "a2a_before_humans": true,
+    "launch_mode": true
+  },
+  "exit_big_tech": [
+    { "vendor": "Replit", "replacement": "Servury VPS + GitHub Actions", "status": "migrating" },
+    { "vendor": "Vapi", "replacement": "LiveKit + Telnyx SIP", "status": "bridge" },
+    { "vendor": "Cursor", "replacement": "Self-hosted agent workers", "status": "build_via_treasury" }
+  ]
+}

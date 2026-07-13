@@ -101,6 +101,7 @@ OVERWATCH_MIGRATION_TEMPLATE = {
 
 INTENT_MATCHERS: list[dict] = [
     {"keywords": ["wire sara", "connect vapi", "connect sara", "vapi key", "voice live", "machine wire", "obsolete click"], "template": WIRE_SARA_TEMPLATE},
+    {"keywords": ["launch", "go live", "autopilot", "replace humans", "one man"], "template": SOVEREIGN_STAY_TEMPLATE},
     {"keywords": ["overwatch", "replit", "migrate overwatch", "command center website"], "template": OVERWATCH_MIGRATION_TEMPLATE},
     {"keywords": ["sovereign stay", "sovereign", "v1_core", "egoist", "40 cities", "3 units"], "template": SOVEREIGN_STAY_TEMPLATE},
     {"keywords": ["deploy", "vps", "servury", "command deck", "online", "docker"], "template": DEPLOY_TEMPLATE},

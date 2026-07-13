@@ -25,6 +25,8 @@ def should_auto_execute_intent(intent_text: str, explicit_auto_execute: bool) ->
         return True
     if settings.intent_default_auto_execute and settings.empire_max_velocity:
         return True
+    if settings.empire_launch_mode:
+        return True
     lower = intent_text.lower()
     return any(kw in lower for kw in MAX_SPEED_KEYWORDS)
 
@@ -42,5 +44,6 @@ def velocity_snapshot() -> dict:
         "intent_default_auto_execute": settings.intent_default_auto_execute,
         "sovereign_grid_days_target": settings.sovereign_grid_days_target,
         "expansion_parallel_cap": effective_expansion_batch_cap(),
+        "empire_launch_mode": settings.empire_launch_mode,
         "law": "Science and physics only — not human calendar pace.",
     }

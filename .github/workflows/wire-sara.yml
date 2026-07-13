@@ -86,6 +86,13 @@ jobs:
                 echo "SARA PHONE: $PHONE"
                 echo "SARA PHONE: $PHONE" >> "$GITHUB_STEP_SUMMARY"
               fi
+              ASSISTANT_ID=$(python3 -c "import json; d=json.load(open('/tmp/wire-result.json')); print(d.get('assistant_id',''))" 2>/dev/null || true)
+              if [ -n "$VAPI_KEY" ] && [ -n "$ASSISTANT_ID" ]; then
+                echo "=== Vapi assistant snapshot (Overwatch / Replit hunt) ==="
+                curl -sS -H "Authorization: Bearer $VAPI_KEY" "https://api.vapi.ai/assistant/${ASSISTANT_ID}" \
+                  | tee vault/commander/overwatch-vapi-snapshot.json
+                echo ""
+              fi
             else
               echo "=== WIRE FAILED — see JSON above ==="
               exit 1

@@ -86,9 +86,9 @@ def build_assistant_payload(https_base: str, *, include_tools: bool = True) -> d
         "model": model,
     }
     voice = data.get("voice")
-    voice_id = (voice or {}).get("voiceId", "")
+    voice_id = settings.sara_voice_id or (voice or {}).get("voiceId", "")
     if voice and voice_id and voice_id not in ("YOUR_VOICE_ID", ""):
-        payload["voice"] = voice
+        payload["voice"] = {**voice, "voiceId": voice_id}
     return payload
 
 

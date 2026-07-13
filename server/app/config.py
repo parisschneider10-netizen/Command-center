@@ -71,7 +71,9 @@ class Settings(BaseSettings):
     sovereign_payment_mode: str = "auto"
     # Max velocity — transhumanist execution (science is the only limit)
     empire_max_velocity: bool = True
+    empire_launch_mode: bool = True
     intent_default_auto_execute: bool = True
+    sara_voice_id: str = "EXAVITQu4vr4xnSDxMaL"
     sovereign_grid_days_target: int = 30
     # Vapi machine-wire (drop API key once — system wires SARA)
     vapi_api_key: str = ""
