@@ -1,0 +1,113 @@
+# One-click SARA wire — drop Vapi API key in GitHub Secrets, system does the rest.
+#
+# Secrets required:
+#   VPS_HOST, VPS_USER, VPS_SSH_PASSWORD (same as deploy)
+#   VAPI_API_KEY — from dashboard.vapi.ai → API Keys
+#   VAPI_ASSISTANT_ID — optional (auto-picks first assistant)
+#   VAPI_PHONE_NUMBER_ID — optional
+#   MACHINE_WIRE_TOKEN — optional (auto-generated if missing)
+
+name: Wire SARA (machine speed)
+
+on:
+  workflow_dispatch:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  wire:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request == null &&
+        contains(github.event.comment.body, '@cursor') &&
+        (
+          contains(github.event.comment.body, 'wire sara') ||
+          contains(github.event.comment.body, 'connect vapi') ||
+          contains(github.event.comment.body, 'machine wire')
+        )
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check secrets
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VAPI_API_KEY: ${{ secrets.VAPI_API_KEY }}
+        run: |
+          test -n "$VPS_HOST" || { echo "::error::Missing VPS_HOST"; exit 1; }
+          test -n "$VAPI_API_KEY" || { echo "::error::Missing VAPI_API_KEY — add from dashboard.vapi.ai"; exit 1; }
+
+      - name: Wire HTTPS + Vapi on VPS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          password: ${{ secrets.VPS_SSH_PASSWORD }}
+          command_timeout: 20m
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /opt/Command-center
+            git pull origin main
+            WIRE_TOKEN="${{ secrets.MACHINE_WIRE_TOKEN }}"
+            if [ -z "$WIRE_TOKEN" ]; then
+              WIRE_TOKEN="$(openssl rand -hex 24)"
+            fi
+            for kv in \
+              "VAPI_API_KEY=${{ secrets.VAPI_API_KEY }}" \
+              "VAPI_ASSISTANT_ID=${{ secrets.VAPI_ASSISTANT_ID }}" \
+              "VAPI_PHONE_NUMBER_ID=${{ secrets.VAPI_PHONE_NUMBER_ID }}" \
+              "VPS_PUBLIC_IP=${{ secrets.VPS_HOST }}" \
+              "MACHINE_WIRE_TOKEN=$WIRE_TOKEN"; do
+              key="${kv%%=*}"
+              val="${kv#*=}"
+              [ -z "$val" ] && continue
+              if grep -q "^${key}=" .env; then
+                sed -i "s|^${key}=.*|${key}=${val}|" .env
+              else
+                echo "${key}=${val}" >> .env
+              fi
+            done
+            docker compose up -d --build api
+            bash scripts/setup-sslip-https.sh
+            sleep 10
+            curl -fsS -X POST "http://127.0.0.1:8000/api/vapi/machine-wire" \
+              -H "X-Machine-Wire-Token: $WIRE_TOKEN"
+            echo ""
+            echo "=== SARA WIRED ==="
+            cat vault/commander/vapi-wire.json 2>/dev/null || true
+
+      - name: Verify public HTTPS health
+        run: |
+          HOST="${{ secrets.VPS_HOST }}"
+          SSLIP="${HOST//./-}.sslip.io"
+          curl -fsSk --max-time 20 "https://${SSLIP}/health"
+          echo ""
+          echo "SARA webhook: https://${SSLIP}/vapi/webhook" >> "$GITHUB_STEP_SUMMARY"
+          echo "Portal: https://${SSLIP}/" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Reply on issue
+        if: github.event_name == 'issue_comment'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const host = '${{ secrets.VPS_HOST }}'.replace(/\./g, '-');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                '### SARA machine-wire ✅',
+                '',
+                `HTTPS: https://${host}.sslip.io/health`,
+                `Webhook: https://${host}.sslip.io/vapi/webhook`,
+                '',
+                'Call your Vapi number and say: *Give me a briefing.*',
+              ].join('\n'),
+            });

@@ -1,15 +1,63 @@
 import json
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import get_current_user, verify_token
+from app.config import settings
 from app.database import get_db
+from app.integrations.machine_wire import machine_wire_sara, wire_readiness
 from app.models import VoiceSession
 from app.services import log_activity
 
 router = APIRouter(prefix="/vapi", tags=["vapi"])
+optional_bearer = HTTPBearer(auto_error=False)
+
+
+async def _require_wire_auth(
+    credentials: HTTPAuthorizationCredentials | None = Depends(optional_bearer),
+    x_machine_wire_token: str | None = Header(None),
+) -> str:
+    token = x_machine_wire_token or (credentials.credentials if credentials else None)
+    if token and settings.machine_wire_token and token == settings.machine_wire_token:
+        return "machine"
+    if credentials:
+        verify_token(credentials.credentials)
+        return "portal"
+    raise HTTPException(
+        status_code=401,
+        detail="Portal bearer token or X-Machine-Wire-Token required",
+    )
+
+
+@router.get("/status")
+async def vapi_status(_: str = Depends(get_current_user)) -> dict:
+    """SARA / Vapi wire status — no dashboard needed."""
+    return {"ok": True, **wire_readiness()}
+
+
+@router.post("/machine-wire")
+async def machine_wire(
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(_require_wire_auth),
+) -> dict:
+    """
+    Machine-speed SARA wire: PATCH Vapi assistant via API key.
+    Add VAPI_API_KEY to .env or GitHub Secrets → run Wire SARA workflow.
+    """
+    result = await machine_wire_sara()
+    await log_activity(
+        db,
+        "vapi_machine_wire",
+        "SARA machine-wire " + ("OK" if result.get("ok") else "FAILED"),
+        result,
+    )
+    if not result.get("ok"):
+        raise HTTPException(status_code=400, detail=result)
+    return result
 
 
 @router.post("/webhook")

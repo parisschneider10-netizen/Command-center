@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     intent_auto_post_rah: bool = True
     kcmo_max_units: int = 30
     treasury_sales_close_hold_hours: int = 4
+<<<<<<< HEAD
     sovereign_target_cities: int = 40
     sovereign_units_per_city: int = 3
     sovereign_upfront_fee_cents: int = 15000
@@ -66,6 +67,16 @@ class Settings(BaseSettings):
     treasury_crypto_asset: str = "USDC"
     treasury_crypto_auto_payout_closer: bool = True
     sovereign_payment_mode: str = "auto"
+=======
+    # Vapi machine-wire (drop API key once — system wires SARA)
+    vapi_api_key: str = ""
+    vapi_assistant_id: str = ""
+    vapi_phone_number_id: str = ""
+    vps_public_ip: str = ""
+    public_https_url: str = ""
+    machine_wire_token: str = ""
+    enable_https_caddy: bool = True
+>>>>>>> 32924fe (Machine-wire SARA: Vapi API key once, zero dashboard clicks)
 
     @property
     def cors_origin_list(self) -> list[str]:
