@@ -72,6 +72,7 @@ def build_assistant_payload(https_base: str) -> dict[str, Any]:
         "maxDurationSeconds": data.get("maxDurationSeconds", 600),
         "server": {"url": f"{https_base.rstrip('/')}/vapi/webhook"},
         "serverMessages": data.get("serverMessages", ["end-of-call-report", "status-update"]),
+        "tools": tools,
         "model": {
             "provider": data.get("model", {}).get("provider", "openai"),
             "model": data.get("model", {}).get("model", "gpt-4o"),
@@ -79,7 +80,6 @@ def build_assistant_payload(https_base: str) -> dict[str, Any]:
             "messages": [
                 {"role": "system", "content": data.get("systemPrompt", "You are SARA.")},
             ],
-            "tools": tools,
         },
     }
     voice = data.get("voice")
