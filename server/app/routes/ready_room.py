@@ -12,6 +12,7 @@ from app.auth import get_current_user
 from app.config import settings
 from app.database import get_db
 from app.integrations.n8n import trigger_n8n
+from app.ready_room.chat import handle_chat_message, save_chat_attachment
 from app.ready_room.scanner import scan_pending_intents
 from app.ready_room.service import (
     list_ready_room_notes,
@@ -38,6 +39,12 @@ class HandwrittenPathIn(BaseModel):
     path: str = Field(description="Vault-relative path, e.g. ready-room/handwritten/note.jpg")
 
 
+class ReadyRoomChatIn(BaseModel):
+    message: str = Field(description="Chat line — intent, drill:, launch:, or scan")
+    mode: str | None = Field(default=None, description="Override drill|live")
+    auto_scan: bool = Field(default=True, description="Run scan after intent")
+
+
 @router.get("/status")
 async def ready_room_status(_: str = Depends(get_current_user)) -> dict:
     """Ready Room snapshot — pending intents, folders, Obsidian paths."""
@@ -50,8 +57,17 @@ async def ready_room_status(_: str = Depends(get_current_user)) -> dict:
         "folders": {
             "intent": "Type intents here (Obsidian template)",
             "handwritten": "Drop photo scans of handwritten notes",
+            "chat": "Chat transcripts + attachments (API / Telegram)",
             "processed": "System extractions",
             "archive": "Executed intents",
+        },
+        "chat": {
+            "enabled": True,
+            "endpoints": {
+                "message": "POST /api/ready-room/chat",
+                "upload": "POST /api/ready-room/chat/upload",
+            },
+            "manual": "vault/commander/ready-room-chat-manual.md",
         },
         "pending_intents": len(pending),
         "pending": pending[:20],
@@ -95,9 +111,52 @@ async def scan_ready_room(
     return {"ok": True, **result}
 
 
+@router.post("/chat")
+async def ready_room_chat(
+    body: ReadyRoomChatIn,
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_user),
+) -> dict:
+    """
+    Chat-style Ready Room — text like messaging UI.
+    Same flow as Telegram bridge; sovereign on your VPS.
+    """
+    result = await handle_chat_message(
+        db,
+        body.message,
+        source="ready-room-chat",
+        auto_scan=body.auto_scan,
+    )
+    return result
+
+
+@router.post("/chat/upload")
+async def ready_room_chat_upload(
+    file: UploadFile = File(...),
+    caption: str = "",
+    auto_scan: bool = True,
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_user),
+) -> dict:
+    """Chat + file upload — photo/PDF scan → handwritten ingest."""
+    data = await file.read()
+    if len(data) > 15 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large (max 15MB)")
+    mime = file.content_type or "application/octet-stream"
+    return await save_chat_attachment(
+        db,
+        data,
+        file.filename or "upload.bin",
+        mime,
+        source="ready-room-chat",
+        caption=caption,
+        auto_scan=auto_scan,
+    )
+
+
 @router.post("/handwritten/path")
 async def ingest_handwritten_path(
-    path: str,
+    body: HandwrittenPathIn,
     db: AsyncSession = Depends(get_db),
     _: str = Depends(get_current_user),
 ) -> dict:
@@ -105,14 +164,14 @@ async def ingest_handwritten_path(
     Process image already in vault (Commander's process_handwritten_note flow).
     Path relative to vault, e.g. ready-room/handwritten/note.jpg
     """
-    full = Path(settings.vault_path) / path
+    full = Path(settings.vault_path) / body.path
     if not full.exists():
         raise HTTPException(status_code=404, detail="Image not found in vault")
     try:
         result = await process_handwritten_note(full)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    await log_activity(db, "ready_room_handwritten", path, result)
+    await log_activity(db, "ready_room_handwritten", body.path, result)
     return {"ok": True, **result}
 
 

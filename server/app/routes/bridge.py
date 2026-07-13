@@ -8,6 +8,7 @@ from app.comms.email import comms_configured, sync_inbox
 from app.config import settings
 from app.database import get_db
 from app.doctrine import doctrine_snapshot
+from app.integrations.telegram_bridge import telegram_configured
 
 router = APIRouter(prefix="/api/bridge", tags=["communication-bridge"])
 
@@ -71,6 +72,20 @@ async def bridge_status(_: str = Depends(get_current_user)) -> dict:
                 "live": bool(settings.bridge_webhook_secret),
                 "how": "POST /api/bridge/webhook with X-Bridge-Secret header (n8n, Zapier)",
             },
+            "ready_room_chat": {
+                "live": True,
+                "primary": True,
+                "how": "Text + file upload like Cursor — POST /api/ready-room/chat and /chat/upload",
+                "mobile": "Telegram bot (optional) or portal",
+                "doc": "vault/commander/ready-room-chat-manual.md",
+                "vault": "vault/ready-room/chat/",
+            },
+            "telegram": {
+                "live": telegram_configured(),
+                "how": "Your bot → POST /api/telegram/webhook → same Ready Room pipeline",
+                "doc": "vault/commander/ready-room-chat-manual.md",
+                "sovereign": "Transport only — token on VPS, messages copied to vault",
+            },
         },
         "gmail_answer": {
             "connect_gmail_to_cursor": False,
@@ -94,7 +109,7 @@ async def bridge_status(_: str = Depends(get_current_user)) -> dict:
         ],
         "commander_loop": {
             "at_work_no_vps": "GitHub mobile → Issue → @cursor (works now)",
-            "after_vps": "Call SARA + portal + GitHub Issues (all three)",
+            "after_vps": "Ready Room chat / Telegram / SARA voice / portal / GitHub Issues",
             "not_gmail_to_cursor": "Forward to sovereign mail OR GitHub email-to-issue",
         },
     }

@@ -50,6 +50,10 @@ class Settings(BaseSettings):
     empire_tier_override: int = 0
     bridge_webhook_secret: str = ""
     bridge_allowed_senders: str = ""
+    # Sovereign Telegram bridge (optional — chat + file upload to Ready Room)
+    telegram_bot_token: str = ""
+    telegram_webhook_secret: str = ""
+    telegram_commander_chat_ids: str = ""  # comma-separated; lock to your chat id
     human_firewall_size: int = 3
     intent_auto_post_rah: bool = True
     kcmo_max_units: int = 30
