@@ -491,6 +491,7 @@ async def tool_state_intent(
   Optional auto_execute posts RentAHuman micro-tasks and queues hive.
     """
     from app.intent.engine import execute_intent, intent_briefing, plan_intent
+    from app.velocity import should_auto_execute_intent
 
     intent = await plan_intent(db, intent_text=body.intent, source="voice")
     briefing = await intent_briefing(db, intent.id)
@@ -500,7 +501,7 @@ async def tool_state_intent(
     msg = direction
     if human.get("voice_summary"):
         msg += " " + human["voice_summary"]
-    if body.auto_execute:
+    if should_auto_execute_intent(body.intent, body.auto_execute):
         ex = await execute_intent(db, intent.id)
         msg += f" Executing: {len(ex.get('outcomes', []))} micro-tasks queued."
     return VoiceToolResponse(

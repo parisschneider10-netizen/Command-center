@@ -124,6 +124,8 @@ def _direction_statement(template_name: str, intent_text: str, human_cap: dict) 
     return (
         f"Goal: {intent_text.strip()[:200]}. "
         f"Doctrine: A2A obsoletion goal — internal agents + A2A before humans. "
+        f"Max velocity: parallel execution, same-day compound, {settings.sovereign_grid_days_target}-day grid target. "
+        f"Science/physics only — no human calendar pace. "
         f"Hive handles digital execution. Human firewall covers judgment/physical. "
         f"Float supports {caps['standard_gigs_35_usd']} standard gigs now. "
         f"You only intervene on nuclear items in the plan."

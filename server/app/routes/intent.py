@@ -13,7 +13,7 @@ from app.intent.engine import (
 )
 from app.models import CommanderIntent, JudgmentRule
 from app.schemas_intent import IntentExecute, IntentIn, IntentOut, JudgmentRuleUpdate
-from app.treasury.human_capital import human_life_force_snapshot
+from app.velocity import should_auto_execute_intent, velocity_snapshot
 
 router = APIRouter(prefix="/api/intent", tags=["intent-engine"])
 
@@ -30,8 +30,8 @@ async def state_intent(
     """
     intent = await plan_intent(db, intent_text=body.intent, source=body.source)
     briefing = await intent_briefing(db, intent.id)
-    result = {"ok": True, **briefing}
-    if body.auto_execute:
+    result = {"ok": True, "velocity": velocity_snapshot(), **briefing}
+    if should_auto_execute_intent(body.intent, body.auto_execute):
         exec_result = await execute_intent(db, intent.id)
         result["execution"] = exec_result
         briefing = await intent_briefing(db, intent.id)

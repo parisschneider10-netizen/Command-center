@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.auth import router as auth_router
 from app.config import settings
 from app.doctrine import doctrine_snapshot
+from app.velocity import velocity_snapshot
 from app.database import init_db
 from app.routes.a2a import router as a2a_router
 from app.routes.agents import router as agents_router
@@ -97,6 +98,7 @@ async def health() -> dict:
         "status": "ok",
         "service": "command-center",
         "doctrine": doctrine_snapshot(settings.vault_path),
+        "velocity": velocity_snapshot(),
         "layers": {
             "voice_os": True,
             "vault": vault_ok,

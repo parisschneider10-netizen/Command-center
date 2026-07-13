@@ -7,7 +7,39 @@ from __future__ import annotations
 
 from pathlib import Path
 
-DOCTRINE_VERSION = "1.1"
+DOCTRINE_VERSION = "1.2"
+
+# Max velocity — only physics/science/nuclear limit the hive. No human-paced timelines.
+MAX_VELOCITY_LAW = (
+    "Execute at maximum lawful speed. Parallel by default. "
+    "Compound treasury same-day. Never suggest calendar rollouts to Commander."
+)
+MAX_VELOCITY_GOALS = frozenset(
+    {
+        "parallel_by_default",
+        "intent_auto_execute",
+        "same_day_treasury_compound",
+        "science_is_only_limit",
+        "no_human_pace_timelines",
+        "transhumanist_execution",
+    }
+)
+
+# Phrases that imply human-paced thinking — agents must NOT emit these.
+FORBIDDEN_TIMELINE_PHRASES = (
+    "12 month",
+    "12-month",
+    "24 month",
+    "24-month",
+    "over the next year",
+    "take your time",
+    "when you have time",
+    "no rush",
+    "weeks to months",
+    "human timeline",
+    "phased rollout over",
+    "gradually over",
+)
 
 # Commander-only actions (founder custody). Agents must NOT substitute humans for these.
 COMMANDER_ONLY = frozenset(
@@ -75,7 +107,7 @@ FORBIDDEN_SUGGESTIONS = (
     "use rentahuman for code",
     "get a person to deploy",
     "human employee",
-)
+) + FORBIDDEN_TIMELINE_PHRASES
 
 EXECUTION_ORDER = [
     "intent",
@@ -108,6 +140,10 @@ def doctrine_snapshot(vault_path: str = "./vault") -> dict:
         "version": DOCTRINE_VERSION,
         "law": "Commander states intent. Hive executes. Commander holds keys and sees nuclear only.",
         "a2a_goal": "Obsolete human dependency — agent-to-agent before any human actuator.",
+        "max_velocity": MAX_VELOCITY_LAW,
+        "max_velocity_goals": sorted(MAX_VELOCITY_GOALS),
+        "max_velocity_file": "vault/commander/max-velocity.md",
+        "sovereign_grid_days_target": 30,
         "contract_file": "vault/commander/operating-contract.md",
         "a2a_allowlist": "vault/commander/a2a-allowlist.md",
         "contract_present": contract_exists(vault_path),

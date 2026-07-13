@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.velocity import effective_expansion_batch_cap
 from app.integrations.ghl import create_subaccount
 from app.integrations.n8n import trigger_n8n
 from app.integrations.servury import provision_vps
@@ -138,11 +139,12 @@ async def scale_cities(
     """Lock infrastructure across N cities (parallel)."""
     dry = settings.expansion_dry_run if dry_run is None else dry_run
     cap = settings.expansion_max_cities
-    if not dry and len(leads) > settings.expansion_live_batch_cap:
+    batch_cap = effective_expansion_batch_cap()
+    if not dry and len(leads) > batch_cap:
         return {
             "success": False,
             "error": (
-                f"Live batch capped at {settings.expansion_live_batch_cap} cities. "
+                f"Live batch capped at {batch_cap} cities. "
                 f"Set EXPANSION_LIVE_BATCH_CAP or use dry_run."
             ),
             "requested": len(leads),

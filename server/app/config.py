@@ -69,6 +69,10 @@ class Settings(BaseSettings):
     treasury_crypto_asset: str = "USDC"
     treasury_crypto_auto_payout_closer: bool = True
     sovereign_payment_mode: str = "auto"
+    # Max velocity — transhumanist execution (science is the only limit)
+    empire_max_velocity: bool = True
+    intent_default_auto_execute: bool = True
+    sovereign_grid_days_target: int = 30
     # Vapi machine-wire (drop API key once — system wires SARA)
     vapi_api_key: str = ""
     vapi_assistant_id: str = ""
