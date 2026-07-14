@@ -12,6 +12,9 @@ export function clearToken() {
   localStorage.removeItem("cc_token");
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || "";
+const REQUEST_TIMEOUT_MS = 25000;
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
@@ -20,14 +23,27 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
-  if (res.status === 401) {
-    clearToken();
-    window.location.reload();
-    throw new Error("Unauthorized");
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
+    if (res.status === 401) {
+      const isLogin = path.includes("/auth/login");
+      if (!isLogin) {
+        clearToken();
+        window.location.reload();
+      }
+      throw new Error("Invalid credentials");
+    }
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  } finally {
+    clearTimeout(timer);
   }
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
 }
 
 async function upload<T>(path: string, form: FormData): Promise<T> {
@@ -161,6 +177,27 @@ export interface HealthSnapshot {
   velocity: { launch_mode?: boolean; auto_execute?: boolean };
 }
 
+export interface LeadPipeline {
+  total: number;
+  with_phone: number;
+  needs_lookup: number;
+  recent: Array<{
+    id: number;
+    name: string;
+    phone: string;
+    city: string;
+    status: string;
+    has_phone: boolean;
+  }>;
+}
+
+export interface LaunchDeck {
+  sara_wired: boolean;
+  sara_phone: string;
+  leads_in_pipeline: number;
+  auto_hunt: boolean;
+}
+
 export async function login(username: string, password: string) {
   const data = await request<{ access_token: string }>("/auth/login", {
     method: "POST",
@@ -220,4 +257,16 @@ export const api = {
     form.append("caption", caption);
     return upload<Record<string, unknown>>("/api/ready-room/chat/upload", form);
   },
+  launchStatus: () => request<LaunchDeck>("/api/launch/status"),
+  leadPipeline: () => request<LeadPipeline>("/api/leads/pipeline"),
+  huntLeads: (city = "Kansas City", max_leads = 25) =>
+    request<Record<string, unknown>>("/api/leads/hunt", {
+      method: "POST",
+      body: JSON.stringify({ city, max_leads }),
+    }),
+  killShot: (city = "Kansas City", drill = false) =>
+    request<Record<string, unknown>>("/api/launch/kill-shot", {
+      method: "POST",
+      body: JSON.stringify({ city, hunt_leads: true, max_leads: 25, drill }),
+    }),
 };

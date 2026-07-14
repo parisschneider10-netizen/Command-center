@@ -52,9 +52,8 @@ async def get_current_user(
 
 @router.post("/login", response_model=TokenResponse)
 async def login(body: LoginRequest) -> TokenResponse:
-    if (
-        body.username != settings.portal_username
-        or body.password != settings.portal_password
-    ):
+    username = body.username.strip().lower()
+    expected = settings.portal_username.strip().lower()
+    if username != expected or body.password != settings.portal_password:
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    return TokenResponse(access_token=create_access_token(body.username))
+    return TokenResponse(access_token=create_access_token(expected))

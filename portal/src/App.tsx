@@ -7,6 +7,8 @@ import {
   Decision,
   HealthSnapshot,
   Lead,
+  LaunchDeck,
+  LeadPipeline,
   SovereignStatus,
   Task,
   VoiceSession,
@@ -54,8 +56,11 @@ function Dashboard() {
   const [addPriority, setAddPriority] = useState("7");
   const [addStatus, setAddStatus] = useState<string | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [leadPipeline, setLeadPipeline] = useState<LeadPipeline | null>(null);
+  const [launchDeck, setLaunchDeck] = useState<LaunchDeck | null>(null);
   const [sovereign, setSovereign] = useState<SovereignStatus | null>(null);
   const [health, setHealth] = useState<HealthSnapshot | null>(null);
+  const [launchBusy, setLaunchBusy] = useState(false);
   const [leadName, setLeadName] = useState("");
   const [leadPhone, setLeadPhone] = useState("");
   const [leadCity, setLeadCity] = useState("Kansas City");
@@ -72,7 +77,7 @@ function Dashboard() {
 
   const refresh = useCallback(async () => {
     try {
-      const [b, t, d, v, a, cap, acq, cats, ld, sov, h] = await Promise.all([
+      const [b, t, d, v, a, cap, acq, cats, ld, sov, h, deck, pipe] = await Promise.all([
         api.briefing(),
         api.tasks(),
         api.decisions(),
@@ -84,6 +89,8 @@ function Dashboard() {
         api.leads().catch(() => []),
         api.sovereignStatus().catch(() => null),
         api.health().catch(() => null),
+        api.launchStatus().catch(() => null),
+        api.leadPipeline().catch(() => null),
       ]);
       setBriefing(b);
       setTasks(t);
@@ -95,6 +102,8 @@ function Dashboard() {
       setLeads(ld);
       setSovereign(sov);
       setHealth(h);
+      setLaunchDeck(deck);
+      setLeadPipeline(pipe);
       const categoryMap: Record<string, string> = cats.categories ?? {};
       setCategories(categoryMap);
       if (Object.keys(categoryMap).length && !categoryMap[addCategory]) {
@@ -129,6 +138,41 @@ function Dashboard() {
       await refresh();
     } catch (err) {
       setAddStatus(err instanceof Error ? err.message : "Failed to add");
+    }
+  }
+
+  async function handleHuntLeads() {
+    setLaunchBusy(true);
+    setLaunchStatus(null);
+    try {
+      const result = await api.huntLeads(leadCity || "Kansas City", 25);
+      const hunted = (result.hunted as number) ?? 0;
+      const phones = (result.with_phone as number) ?? 0;
+      setLaunchStatus(`Hunted ${hunted} leads (${phones} with phone). Pipeline filling.`);
+      await refresh();
+    } catch (err) {
+      setLaunchStatus(err instanceof Error ? err.message : "Hunt failed");
+    } finally {
+      setLaunchBusy(false);
+    }
+  }
+
+  async function handleKillShot(drill = false) {
+    setLaunchBusy(true);
+    setLaunchStatus(null);
+    try {
+      const result = await api.killShot(leadCity || "Kansas City", drill);
+      const hunted = (result.hunt as { hunted?: number } | null)?.hunted ?? 0;
+      setLaunchStatus(
+        drill
+          ? `Drill complete. ${hunted} leads hunted. Intent queued.`
+          : `KILL SHOT LIVE. ${hunted} leads hunted. Closers go. Call SARA now.`,
+      );
+      await refresh();
+    } catch (err) {
+      setLaunchStatus(err instanceof Error ? err.message : "Launch failed");
+    } finally {
+      setLaunchBusy(false);
     }
   }
 
@@ -252,17 +296,19 @@ function Dashboard() {
           <p className="loading">Loading command deck...</p>
         ) : tab === "launch" ? (
           <div className="grid-2">
-            <Panel title="Kill shot — call or chat" wide>
+            <Panel title="Launch — automated" wide>
               <div className="launch-hero">
                 <p className="launch-phone">
-                  <a href="tel:+19713820038">+1 (971) 382-0038</a> — SARA
-                </p>
-                <p className="launch-phrase">
-                  Say: <em>&quot;Launch Sovereign Stay MTR. Live. Max speed. Auto execute.&quot;</em>
+                  <a href="tel:+19713820038">
+                    {launchDeck?.sara_phone || "+1 (971) 382-0038"}
+                  </a> — SARA
                 </p>
                 <div className="launch-badges">
-                  <span className={`badge ${health?.layers?.sara_wired ? "badge-completed" : "badge-pending"}`}>
-                    SARA {health?.layers?.sara_wired ? "wired" : "not wired"}
+                  <span className={`badge ${launchDeck?.sara_wired ? "badge-completed" : "badge-pending"}`}>
+                    SARA {launchDeck?.sara_wired ? "wired" : "run Wire SARA workflow"}
+                  </span>
+                  <span className="badge badge-completed">
+                    {leadPipeline?.total ?? 0} leads in pipeline
                   </span>
                   {sovereign && (
                     <span className="badge badge-completed">
@@ -271,50 +317,54 @@ function Dashboard() {
                   )}
                 </div>
               </div>
-              <form className="add-form chat-form" onSubmit={handleChatSend}>
-                <label>
-                  Command (chat like Cursor)
-                  <input
-                    value={chatMessage}
-                    onChange={(e) => setChatMessage(e.target.value)}
-                    placeholder='launch sovereign stay live · lead: Name, phone, city · scan'
-                  />
-                </label>
-                <label>
-                  Attach file (sketch / screenshot)
-                  <input type="file" accept="image/*,.pdf" onChange={(e) => setChatFile(e.target.files?.[0] ?? null)} />
-                </label>
-                <button type="submit" className="btn-primary">Send</button>
-              </form>
-              <button type="button" className="btn-ghost launch-drill" onClick={handleDrill}>
-                Run sovereign drill (dry run)
-              </button>
-            </Panel>
-            <Panel title="Feed leads">
-              <form className="add-form" onSubmit={handleAddLead}>
-                <label>Name<input value={leadName} onChange={(e) => setLeadName(e.target.value)} required /></label>
-                <label>Phone<input value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} required /></label>
-                <label>City<input value={leadCity} onChange={(e) => setLeadCity(e.target.value)} required /></label>
-                <label>Email<input value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} /></label>
-                <button type="submit" className="btn-primary">Add lead</button>
-              </form>
-              <p className="webhook-hint mono">
-                GHL webhook: POST /api/leads/intake
+              <div className="launch-actions">
+                <button
+                  type="button"
+                  className="btn-killshot"
+                  disabled={launchBusy}
+                  onClick={() => handleKillShot(false)}
+                >
+                  {launchBusy ? "Launching…" : "KILL SHOT — LAUNCH LIVE"}
+                </button>
+                <button
+                  type="button"
+                  className="btn-hunt"
+                  disabled={launchBusy}
+                  onClick={handleHuntLeads}
+                >
+                  {launchBusy ? "Hunting…" : "HUNT LEADS NOW (auto)"}
+                </button>
+                <button
+                  type="button"
+                  className="btn-ghost launch-drill-inline"
+                  disabled={launchBusy}
+                  onClick={() => handleKillShot(true)}
+                >
+                  Sights on (drill)
+                </button>
+              </div>
+              <p className="launch-hint">
+                Kill shot = auto-hunt leads + launch intent live. No manual entry. Money path: leads → closers → $150 presale.
               </p>
             </Panel>
-            <Panel title="Lead pipeline">
-              {leads.length === 0 ? (
-                <EmptyState text="No leads yet — add above or call SARA." />
+            <Panel title="Lead pipeline (auto-filled)">
+              {!leadPipeline || leadPipeline.total === 0 ? (
+                <EmptyState text="No leads yet — tap HUNT LEADS NOW or KILL SHOT." />
               ) : (
-                leads.slice(0, 20).map((l) => (
-                  <div key={l.id} className="row-item compact">
-                    <div className="row-main">
-                      <strong>{l.name}</strong>
-                      <p>{l.city} · {l.phone}</p>
+                <>
+                  <p className="pipeline-stats">
+                    {leadPipeline.with_phone} callable · {leadPipeline.needs_lookup} need lookup
+                  </p>
+                  {leadPipeline.recent.map((l) => (
+                    <div key={l.id} className="row-item compact">
+                      <div className="row-main">
+                        <strong>{l.name}</strong>
+                        <p>{l.city} · {l.has_phone ? l.phone : "phone pending"}</p>
+                      </div>
+                      <span className="badge">{l.status}</span>
                     </div>
-                    <span className="badge">{l.status}</span>
-                  </div>
-                ))
+                  ))}
+                </>
               )}
             </Panel>
             <Panel title="Record presale ($150 door)">
@@ -329,6 +379,19 @@ function Dashboard() {
                   Drill only (no live closer payout)
                 </label>
                 <button type="submit" className="btn-primary">Record presale</button>
+              </form>
+            </Panel>
+            <Panel title="Voice / chat (optional)">
+              <form className="add-form chat-form" onSubmit={handleChatSend}>
+                <label>
+                  Command
+                  <input
+                    value={chatMessage}
+                    onChange={(e) => setChatMessage(e.target.value)}
+                    placeholder="launch sovereign stay live"
+                  />
+                </label>
+                <button type="submit" className="btn-primary">Send</button>
               </form>
             </Panel>
             {launchStatus && <p className="form-status launch-status wide">{launchStatus}</p>}
@@ -652,6 +715,20 @@ const dashboardStyles = `
   .launch-badges { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
   .chat-form { border-top: 1px solid var(--border); }
   .launch-drill { margin: 0 1.25rem 1rem; }
+  .launch-actions { padding: 0 1.25rem 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+  .btn-killshot {
+    width: 100%; padding: 1rem; font-size: 1rem; font-weight: 700;
+    background: #e53935; color: #fff; border: none; border-radius: 10px; cursor: pointer;
+  }
+  .btn-killshot:disabled { opacity: 0.6; }
+  .btn-hunt {
+    width: 100%; padding: 0.875rem; font-size: 0.95rem; font-weight: 600;
+    background: var(--accent); color: #000; border: none; border-radius: 10px; cursor: pointer;
+  }
+  .btn-hunt:disabled { opacity: 0.6; }
+  .launch-drill-inline { width: 100%; text-align: center; }
+  .launch-hint { padding: 0 1.25rem 1rem; font-size: 0.8rem; color: var(--text-muted); margin: 0; }
+  .pipeline-stats { padding: 0.75rem 1.25rem 0; font-size: 0.8rem; color: var(--accent); margin: 0; }
   .webhook-hint { padding: 0 1.25rem 1rem; font-size: 0.75rem; color: var(--text-muted); }
   .launch-status.wide { grid-column: 1 / -1; padding: 0 1.25rem 1rem; }
   .checkbox-row { flex-direction: row !important; align-items: center; gap: 0.5rem !important; }
