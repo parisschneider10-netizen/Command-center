@@ -2,7 +2,7 @@ import { FormEvent, useState } from "react";
 import { login } from "./api";
 
 export default function Login({ onSuccess }: { onSuccess: () => void }) {
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState("commander");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -12,10 +12,17 @@ export default function Login({ onSuccess }: { onSuccess: () => void }) {
     setLoading(true);
     setError("");
     try {
-      await login(username, password);
+      await login(username.trim(), password);
       onSuccess();
-    } catch {
-      setError("Invalid credentials. Check your username and password.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Login failed";
+      if (msg.includes("401") || msg.toLowerCase().includes("invalid")) {
+        setError("Invalid credentials. Username is commander (lowercase).");
+      } else if (msg.toLowerCase().includes("abort") || msg.toLowerCase().includes("timeout")) {
+        setError("Server slow or restarting — wait 30s after deploy, then retry.");
+      } else {
+        setError(msg.slice(0, 120) || "Login failed. Check connection and retry.");
+      }
     } finally {
       setLoading(false);
     }
@@ -36,6 +43,9 @@ export default function Login({ onSuccess }: { onSuccess: () => void }) {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               required
             />
           </label>
