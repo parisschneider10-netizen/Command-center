@@ -46,6 +46,19 @@ def parse_chat_message(text: str) -> dict:
     if lower in ("scan", "scan ready room", "execute", "fire"):
         return {"action": "scan"}
 
+    if lower.startswith("lead:") or lower.startswith("lead "):
+        body = raw.split(":", 1)[-1].strip() if ":" in raw else raw[5:].strip()
+        parts = [p.strip() for p in body.replace("|", ",").split(",") if p.strip()]
+        if len(parts) >= 3:
+            return {
+                "action": "lead",
+                "name": parts[0],
+                "phone": parts[1],
+                "city": parts[2],
+                "email": parts[3] if len(parts) > 3 else None,
+            }
+        return {"action": "note", "body": body, "title": "Lead parse failed — use: lead: Name, phone, city"}
+
     if lower.startswith("note:") or lower.startswith("note "):
         body = raw.split(":", 1)[-1].strip() if ":" in raw else raw[5:].strip()
         return {"action": "note", "body": body, "title": body[:60]}
@@ -91,6 +104,27 @@ async def handle_chat_message(
 
         path = write_inbox_note(parsed["title"], parsed["body"], source=source)
         return {"ok": True, "action": "note", "path": str(path.name)}
+
+    if parsed["action"] == "lead":
+        from app.value_node.expansion import register_lead
+
+        lead = await register_lead(
+            db,
+            {
+                "name": parsed["name"],
+                "phone": parsed["phone"],
+                "city": parsed["city"],
+                "email": parsed.get("email"),
+            },
+            source=source,
+        )
+        return {
+            "ok": True,
+            "action": "lead",
+            "id": lead.id,
+            "name": lead.name,
+            "city": lead.city,
+        }
 
     path = write_intent_note(
         parsed["intent"],

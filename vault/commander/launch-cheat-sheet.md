@@ -4,9 +4,13 @@
 
 ---
 
+# Launch tonight — one portal + call
+
+See `vault/commander/launch-tonight.md`
+
 ## Your line
 
-**+1 (971) 382-0038** · Portal: `http://157.254.194.89:3000`
+**+1 (971) 382-0038** · Portal: `http://157.254.194.89:3000` → **Launch** tab
 
 ---
 

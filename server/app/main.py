@@ -29,6 +29,7 @@ from app.routes.overwatch import router as overwatch_router
 from app.routes.ready_room import router as ready_room_router
 from app.routes.welcome_basket import router as welcome_basket_router
 from app.routes.laundry import router as laundry_router
+from app.routes.leads import router as leads_router
 from app.routes.value_node import router as value_node_router
 from app.routes.voice import router as voice_router
 
@@ -82,6 +83,7 @@ app.include_router(intent_router)
 app.include_router(a2a_router)
 app.include_router(value_node_router)
 app.include_router(laundry_router)
+app.include_router(leads_router)
 app.include_router(welcome_basket_router)
 app.include_router(kc_blitz_router)
 app.include_router(sovereign_stay_router)

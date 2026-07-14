@@ -75,10 +75,14 @@ async def bridge_status(_: str = Depends(get_current_user)) -> dict:
             "ready_room_chat": {
                 "live": True,
                 "primary": True,
-                "how": "Text + file upload like Cursor — POST /api/ready-room/chat and /chat/upload",
-                "mobile": "Telegram bot (optional) or portal",
-                "doc": "vault/commander/ready-room-chat-manual.md",
-                "vault": "vault/ready-room/chat/",
+                "how": "Portal Launch tab — chat + file upload like Cursor",
+                "api": "POST /api/ready-room/chat",
+            },
+            "lead_intake": {
+                "live": True,
+                "how": "POST /api/leads/intake — GHL forms, scrape tools (no login)",
+                "portal": "Launch tab → Add lead",
+                "doc": "vault/commander/launch-tonight.md",
             },
             "telegram": {
                 "live": telegram_configured(),

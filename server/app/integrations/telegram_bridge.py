@@ -127,6 +127,11 @@ async def handle_telegram_update(update: dict[str, Any], db) -> dict:
             chat_id,
             f"Intent queued ({result.get('mode')}).\n{result.get('path')}\nHive executing.",
         )
+    elif result.get("action") == "lead":
+        await send_message(
+            chat_id,
+            f"Lead fed: {result.get('name')} — {result.get('city')} (#{result.get('id')})",
+        )
     else:
         await send_message(chat_id, f"Done: {result.get('action')}")
 

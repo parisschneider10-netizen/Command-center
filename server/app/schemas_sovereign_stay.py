@@ -7,7 +7,7 @@ class OnboardingPresale(BaseModel):
     city_grid: str
     worker_ref: str
     proof_notes: str
-    dry_run_closer: bool = True
+    dry_run_closer: bool = False  # live when EMPIRE_LAUNCH_MODE=true (override with true to drill)
 
 
 class CryptoPresale(BaseModel):
