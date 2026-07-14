@@ -30,6 +30,20 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return res.json();
 }
 
+async function upload<T>(path: string, form: FormData): Promise<T> {
+  const token = getToken();
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(`${API_BASE}${path}`, { method: "POST", headers, body: form });
+  if (res.status === 401) {
+    clearToken();
+    window.location.reload();
+    throw new Error("Unauthorized");
+  }
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 export interface DashboardStats {
   tasks_pending: number;
   tasks_in_progress: number;
@@ -119,6 +133,34 @@ export interface AcquisitionCategories {
   categories: Record<string, string>;
 }
 
+export interface Lead {
+  id: number;
+  name: string;
+  phone: string;
+  email: string | null;
+  city: string;
+  crisis_type: string;
+  status: string;
+  created_at: string;
+}
+
+export interface SovereignStatus {
+  scale: {
+    hosts_locked: number;
+    slots_remaining: number;
+    max_units: number;
+    target_cities: number;
+  };
+  float_usd: number;
+  vault_reserve_usd: number;
+}
+
+export interface HealthSnapshot {
+  status: string;
+  layers: { sara_wired?: boolean; sara_phone?: string; https_base?: string };
+  velocity: { launch_mode?: boolean; auto_execute?: boolean };
+}
+
 export async function login(username: string, password: string) {
   const data = await request<{ access_token: string }>("/auth/login", {
     method: "POST",
@@ -148,4 +190,34 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  health: () => request<HealthSnapshot>("/health"),
+  leads: () => request<Lead[]>("/api/value-node/leads"),
+  addLead: (body: { name: string; phone: string; city: string; email?: string }) =>
+    request<Lead>("/api/value-node/leads", { method: "POST", body: JSON.stringify(body) }),
+  sovereignStatus: () => request<SovereignStatus>("/api/sovereign-stay/status"),
+  presale: (body: {
+    host_name: string;
+    property_address: string;
+    city_grid: string;
+    worker_ref: string;
+    proof_notes: string;
+    dry_run_closer: boolean;
+  }) =>
+    request<Record<string, unknown>>("/api/sovereign-stay/presale", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  sovereignSimulate: () =>
+    request<Record<string, unknown>>("/api/sovereign-stay/simulate", { method: "POST" }),
+  readyRoomChat: (message: string) =>
+    request<Record<string, unknown>>("/api/ready-room/chat", {
+      method: "POST",
+      body: JSON.stringify({ message, auto_scan: true }),
+    }),
+  readyRoomUpload: (file: File, caption: string) => {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("caption", caption);
+    return upload<Record<string, unknown>>("/api/ready-room/chat/upload", form);
+  },
 };

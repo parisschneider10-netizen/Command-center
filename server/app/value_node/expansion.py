@@ -15,7 +15,7 @@ from app.services import log_activity
 from app.treasury.service import request_spend
 
 
-async def register_lead(db: AsyncSession, lead: dict) -> ScrapedLead:
+async def register_lead(db: AsyncSession, lead: dict, *, source: str = "api") -> ScrapedLead:
     existing = await db.execute(
         select(ScrapedLead).where(ScrapedLead.phone == lead["phone"])
     )
@@ -36,7 +36,22 @@ async def register_lead(db: AsyncSession, lead: dict) -> ScrapedLead:
     db.add(entry)
     await db.commit()
     await db.refresh(entry)
-    await log_activity(db, "lead_scraped", f"Lead: {entry.name} — {entry.city}")
+    await log_activity(
+        db,
+        "lead_scraped",
+        f"Lead: {entry.name} — {entry.city}",
+        {"source": source, "phone": entry.phone},
+    )
+    await trigger_n8n(
+        "lead-intake",
+        {
+            "id": entry.id,
+            "name": entry.name,
+            "phone": entry.phone,
+            "city": entry.city,
+            "source": source,
+        },
+    )
     return entry
 
 

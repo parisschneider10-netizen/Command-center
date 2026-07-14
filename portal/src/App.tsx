@@ -5,6 +5,9 @@ import {
   Briefing,
   CapabilitySnapshot,
   Decision,
+  HealthSnapshot,
+  Lead,
+  SovereignStatus,
   Task,
   VoiceSession,
   api,
@@ -13,7 +16,7 @@ import {
 } from "./api";
 import Login from "./Login";
 
-type Tab = "overview" | "empire" | "tasks" | "decisions" | "voice" | "activity";
+type Tab = "launch" | "overview" | "empire" | "tasks" | "decisions" | "voice" | "activity";
 
 function StatCard({ label, value, accent }: { label: string; value: number; accent?: string }) {
   return (
@@ -35,7 +38,7 @@ function timeAgo(iso: string) {
 }
 
 function Dashboard() {
-  const [tab, setTab] = useState<Tab>("overview");
+  const [tab, setTab] = useState<Tab>("launch");
   const [briefing, setBriefing] = useState<Briefing | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [decisions, setDecisions] = useState<Decision[]>([]);
@@ -50,10 +53,26 @@ function Dashboard() {
   const [addCost, setAddCost] = useState("");
   const [addPriority, setAddPriority] = useState("7");
   const [addStatus, setAddStatus] = useState<string | null>(null);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [sovereign, setSovereign] = useState<SovereignStatus | null>(null);
+  const [health, setHealth] = useState<HealthSnapshot | null>(null);
+  const [leadName, setLeadName] = useState("");
+  const [leadPhone, setLeadPhone] = useState("");
+  const [leadCity, setLeadCity] = useState("Kansas City");
+  const [leadEmail, setLeadEmail] = useState("");
+  const [launchStatus, setLaunchStatus] = useState<string | null>(null);
+  const [chatMessage, setChatMessage] = useState("");
+  const [chatFile, setChatFile] = useState<File | null>(null);
+  const [presaleHost, setPresaleHost] = useState("");
+  const [presaleAddress, setPresaleAddress] = useState("");
+  const [presaleCity, setPresaleCity] = useState("Kansas City");
+  const [presaleWorker, setPresaleWorker] = useState("rah:closer");
+  const [presaleProof, setPresaleProof] = useState("");
+  const [presaleDrill, setPresaleDrill] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
-      const [b, t, d, v, a, cap, acq, cats] = await Promise.all([
+      const [b, t, d, v, a, cap, acq, cats, ld, sov, h] = await Promise.all([
         api.briefing(),
         api.tasks(),
         api.decisions(),
@@ -62,6 +81,9 @@ function Dashboard() {
         api.capability().catch(() => null),
         api.acquisitions().catch(() => []),
         api.acquisitionCategories().catch(() => ({ categories: {} })),
+        api.leads().catch(() => []),
+        api.sovereignStatus().catch(() => null),
+        api.health().catch(() => null),
       ]);
       setBriefing(b);
       setTasks(t);
@@ -70,6 +92,9 @@ function Dashboard() {
       setActivity(a);
       setCapability(cap);
       setAcquisitions(acq);
+      setLeads(ld);
+      setSovereign(sov);
+      setHealth(h);
       const categoryMap: Record<string, string> = cats.categories ?? {};
       setCategories(categoryMap);
       if (Object.keys(categoryMap).length && !categoryMap[addCategory]) {
@@ -104,6 +129,74 @@ function Dashboard() {
       await refresh();
     } catch (err) {
       setAddStatus(err instanceof Error ? err.message : "Failed to add");
+    }
+  }
+
+  async function handleAddLead(e: React.FormEvent) {
+    e.preventDefault();
+    setLaunchStatus(null);
+    try {
+      await api.addLead({
+        name: leadName,
+        phone: leadPhone,
+        city: leadCity,
+        email: leadEmail || undefined,
+      });
+      setLeadName("");
+      setLeadPhone("");
+      setLeadEmail("");
+      setLaunchStatus("Lead fed to pipeline.");
+      await refresh();
+    } catch (err) {
+      setLaunchStatus(err instanceof Error ? err.message : "Lead failed");
+    }
+  }
+
+  async function handleChatSend(e: React.FormEvent) {
+    e.preventDefault();
+    setLaunchStatus(null);
+    try {
+      if (chatFile) {
+        await api.readyRoomUpload(chatFile, chatMessage);
+        setChatFile(null);
+      } else if (chatMessage.trim()) {
+        await api.readyRoomChat(chatMessage);
+      }
+      setChatMessage("");
+      setLaunchStatus("Command sent.");
+      await refresh();
+    } catch (err) {
+      setLaunchStatus(err instanceof Error ? err.message : "Chat failed");
+    }
+  }
+
+  async function handlePresale(e: React.FormEvent) {
+    e.preventDefault();
+    setLaunchStatus(null);
+    try {
+      const result = await api.presale({
+        host_name: presaleHost,
+        property_address: presaleAddress,
+        city_grid: presaleCity,
+        worker_ref: presaleWorker,
+        proof_notes: presaleProof,
+        dry_run_closer: presaleDrill,
+      });
+      setLaunchStatus(`Presale recorded: ${JSON.stringify(result).slice(0, 120)}…`);
+      await refresh();
+    } catch (err) {
+      setLaunchStatus(err instanceof Error ? err.message : "Presale failed");
+    }
+  }
+
+  async function handleDrill() {
+    setLaunchStatus(null);
+    try {
+      const result = await api.sovereignSimulate();
+      setLaunchStatus(`Drill complete: ${JSON.stringify(result).slice(0, 120)}…`);
+      await refresh();
+    } catch (err) {
+      setLaunchStatus(err instanceof Error ? err.message : "Drill failed");
     }
   }
 
@@ -143,7 +236,7 @@ function Dashboard() {
       )}
 
       <nav className="tabs">
-        {(["overview", "empire", "tasks", "decisions", "voice", "activity"] as Tab[]).map((t) => (
+        {(["launch", "overview", "empire", "tasks", "decisions", "voice", "activity"] as Tab[]).map((t) => (
           <button
             key={t}
             className={tab === t ? "tab active" : "tab"}
@@ -157,6 +250,89 @@ function Dashboard() {
       <main className="content">
         {loading && !briefing ? (
           <p className="loading">Loading command deck...</p>
+        ) : tab === "launch" ? (
+          <div className="grid-2">
+            <Panel title="Kill shot — call or chat" wide>
+              <div className="launch-hero">
+                <p className="launch-phone">
+                  <a href="tel:+19713820038">+1 (971) 382-0038</a> — SARA
+                </p>
+                <p className="launch-phrase">
+                  Say: <em>&quot;Launch Sovereign Stay MTR. Live. Max speed. Auto execute.&quot;</em>
+                </p>
+                <div className="launch-badges">
+                  <span className={`badge ${health?.layers?.sara_wired ? "badge-completed" : "badge-pending"}`}>
+                    SARA {health?.layers?.sara_wired ? "wired" : "not wired"}
+                  </span>
+                  {sovereign && (
+                    <span className="badge badge-completed">
+                      {sovereign.scale.hosts_locked}/{sovereign.scale.max_units} locked
+                    </span>
+                  )}
+                </div>
+              </div>
+              <form className="add-form chat-form" onSubmit={handleChatSend}>
+                <label>
+                  Command (chat like Cursor)
+                  <input
+                    value={chatMessage}
+                    onChange={(e) => setChatMessage(e.target.value)}
+                    placeholder='launch sovereign stay live · lead: Name, phone, city · scan'
+                  />
+                </label>
+                <label>
+                  Attach file (sketch / screenshot)
+                  <input type="file" accept="image/*,.pdf" onChange={(e) => setChatFile(e.target.files?.[0] ?? null)} />
+                </label>
+                <button type="submit" className="btn-primary">Send</button>
+              </form>
+              <button type="button" className="btn-ghost launch-drill" onClick={handleDrill}>
+                Run sovereign drill (dry run)
+              </button>
+            </Panel>
+            <Panel title="Feed leads">
+              <form className="add-form" onSubmit={handleAddLead}>
+                <label>Name<input value={leadName} onChange={(e) => setLeadName(e.target.value)} required /></label>
+                <label>Phone<input value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} required /></label>
+                <label>City<input value={leadCity} onChange={(e) => setLeadCity(e.target.value)} required /></label>
+                <label>Email<input value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} /></label>
+                <button type="submit" className="btn-primary">Add lead</button>
+              </form>
+              <p className="webhook-hint mono">
+                GHL webhook: POST /api/leads/intake
+              </p>
+            </Panel>
+            <Panel title="Lead pipeline">
+              {leads.length === 0 ? (
+                <EmptyState text="No leads yet — add above or call SARA." />
+              ) : (
+                leads.slice(0, 20).map((l) => (
+                  <div key={l.id} className="row-item compact">
+                    <div className="row-main">
+                      <strong>{l.name}</strong>
+                      <p>{l.city} · {l.phone}</p>
+                    </div>
+                    <span className="badge">{l.status}</span>
+                  </div>
+                ))
+              )}
+            </Panel>
+            <Panel title="Record presale ($150 door)">
+              <form className="add-form" onSubmit={handlePresale}>
+                <label>Host<input value={presaleHost} onChange={(e) => setPresaleHost(e.target.value)} required /></label>
+                <label>Address<input value={presaleAddress} onChange={(e) => setPresaleAddress(e.target.value)} required /></label>
+                <label>City grid<input value={presaleCity} onChange={(e) => setPresaleCity(e.target.value)} required /></label>
+                <label>Closer ref<input value={presaleWorker} onChange={(e) => setPresaleWorker(e.target.value)} /></label>
+                <label>Proof<input value={presaleProof} onChange={(e) => setPresaleProof(e.target.value)} placeholder="Cash App screenshot" /></label>
+                <label className="checkbox-row">
+                  <input type="checkbox" checked={presaleDrill} onChange={(e) => setPresaleDrill(e.target.checked)} />
+                  Drill only (no live closer payout)
+                </label>
+                <button type="submit" className="btn-primary">Record presale</button>
+              </form>
+            </Panel>
+            {launchStatus && <p className="form-status launch-status wide">{launchStatus}</p>}
+          </div>
         ) : tab === "overview" ? (
           <div className="grid-2">
             <Panel title="Active Tasks">
@@ -469,6 +645,16 @@ const dashboardStyles = `
   .add-form input, .add-form select { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem; color: var(--text); }
   .btn-primary { background: var(--accent); color: #000; border: none; border-radius: 8px; padding: 0.6rem 1rem; font-weight: 600; cursor: pointer; }
   .form-status { font-size: 0.8rem; color: var(--success); margin: 0; }
+  .launch-hero { padding: 1rem 1.25rem 0.5rem; }
+  .launch-phone { font-size: 1.25rem; font-weight: 600; }
+  .launch-phone a { color: var(--voice); text-decoration: none; }
+  .launch-phrase { color: var(--text-muted); font-size: 0.9rem; margin: 0.5rem 0; }
+  .launch-badges { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+  .chat-form { border-top: 1px solid var(--border); }
+  .launch-drill { margin: 0 1.25rem 1rem; }
+  .webhook-hint { padding: 0 1.25rem 1rem; font-size: 0.75rem; color: var(--text-muted); }
+  .launch-status.wide { grid-column: 1 / -1; padding: 0 1.25rem 1rem; }
+  .checkbox-row { flex-direction: row !important; align-items: center; gap: 0.5rem !important; }
 `;
 
 export default function App() {

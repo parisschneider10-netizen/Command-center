@@ -12,7 +12,7 @@ import httpx
 
 from app.config import settings
 
-READY_ROOM_FOLDERS = ("inbox", "intent", "processed", "archive", "handwritten")
+READY_ROOM_FOLDERS = ("inbox", "intent", "processed", "archive", "handwritten", "chat")
 
 
 def vision_api_key() -> str:
@@ -27,6 +27,7 @@ def ready_room_root() -> Path:
     root.mkdir(parents=True, exist_ok=True)
     for sub in READY_ROOM_FOLDERS:
         (root / sub).mkdir(exist_ok=True)
+    (root / "chat" / "attachments").mkdir(parents=True, exist_ok=True)
     return root
 
 

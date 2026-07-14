@@ -50,6 +50,11 @@ class Settings(BaseSettings):
     empire_tier_override: int = 0
     bridge_webhook_secret: str = ""
     bridge_allowed_senders: str = ""
+    # Sovereign Telegram bridge (optional — chat + file upload to Ready Room)
+    telegram_bot_token: str = ""
+    telegram_webhook_secret: str = ""
+    telegram_commander_chat_ids: str = ""  # comma-separated; lock to your chat id
+    lead_webhook_secret: str = ""  # optional X-Lead-Secret for public /api/leads/intake
     human_firewall_size: int = 3
     intent_auto_post_rah: bool = True
     kcmo_max_units: int = 30
@@ -75,6 +80,7 @@ class Settings(BaseSettings):
     empire_launch_mode: bool = True
     intent_default_auto_execute: bool = True
     sara_voice_id: str = "EXAVITQu4vr4xnSDxMaL"
+    sara_phone_e164: str = "+19713820038"
     sovereign_grid_days_target: int = 30
     # Vapi machine-wire (drop API key once — system wires SARA)
     vapi_api_key: str = ""
