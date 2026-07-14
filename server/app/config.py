@@ -38,7 +38,8 @@ class Settings(BaseSettings):
     ghl_company_id: str = ""
     ghl_mtr_recon_snapshot_id: str = ""
     openai_api_key: str = ""
-    llm_api_key: str = ""  # Commander alias (LLM_API_KEY) — same as openai for vision ingest
+    anthropic_api_key: str = ""  # Claude — Ready Room handwritten vision (preferred if set)
+    llm_api_key: str = ""  # Commander alias (LLM_API_KEY) — OpenAI-compatible vision fallback
     expansion_dry_run: bool = True
     expansion_max_cities: int = 40
     expansion_vps_cost_cents: int = 399

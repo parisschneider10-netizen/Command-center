@@ -16,10 +16,25 @@ READY_ROOM_FOLDERS = ("inbox", "intent", "processed", "archive", "handwritten", 
 
 
 def vision_api_key() -> str:
-    """OPENAI_API_KEY or Commander's LLM_API_KEY — funds vision ingest when treasury clears."""
+    """Anthropic, LLM_API_KEY, or OPENAI_API_KEY — funds Ready Room vision ingest."""
     import os
 
-    return (settings.llm_api_key or settings.openai_api_key or os.getenv("LLM_API_KEY", "")).strip()
+    return (
+        settings.anthropic_api_key
+        or settings.llm_api_key
+        or settings.openai_api_key
+        or os.getenv("ANTHROPIC_API_KEY", "")
+        or os.getenv("LLM_API_KEY", "")
+        or os.getenv("OPENAI_API_KEY", "")
+    ).strip()
+
+
+def vision_provider() -> str:
+    import os
+
+    if settings.anthropic_api_key or os.getenv("ANTHROPIC_API_KEY", ""):
+        return "anthropic"
+    return "openai"
 
 
 def ready_room_root() -> Path:
