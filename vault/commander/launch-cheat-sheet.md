@@ -86,6 +86,8 @@ DRILL → health OK → sara_wired → intent dry run → KILL SHOT → presale 
 
 `vault/commander/launch-manual.md`
 
+**Daily pin:** `vault/commander/daily-cheat-sheet.md`
+
 ---
 
 ## Ready Room (Obsidian only)
