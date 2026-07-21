@@ -62,14 +62,15 @@ async def kill_shot(
     """
     hunt_result = None
     if body.hunt_leads:
-        hunt_result = await hunt_leads(
-            db, city=body.city, max_leads=body.max_leads, source="kill_shot"
-        )
+        from app.value_node.eco_express import generate_strike_list
+
+        hunt_result = await generate_strike_list(db)
 
     mode = "drill" if body.drill else "live"
     intent_text = (
-        f"Launch Sovereign Stay MTR. {mode}. Max speed. Auto execute. "
-        f"Focus: lock 3 hosts in {body.city} only. Scale cities later."
+        f"Launch Eco-Express D2C smart thermostat program. {mode}. Max speed. "
+        f"Kansas City suburbs. Strike list → hunter close $149 → RAH install. "
+        f"No hosts. Net $59/door."
     )
     intent = await plan_intent(db, intent_text=intent_text, source="kill_shot")
     execution = None
@@ -91,8 +92,8 @@ async def kill_shot(
         "intent_id": intent.id,
         "execution": execution,
         "next": [
-            f"Lock 3 hosts in {body.city} — presale at door",
-            "Record presale when $150 collected",
+            "Hunters close $149 at door (Evergy rebate pitch)",
+            "Payment confirmed → Lowe's pickup + RAH install",
             f"Call SARA: {settings.sara_phone_e164}",
         ],
     }

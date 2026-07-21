@@ -92,6 +92,18 @@ class Settings(BaseSettings):
     public_https_url: str = ""
     machine_wire_token: str = ""
     enable_https_caddy: bool = True
+    # Eco-Express — D2C smart thermostat flips (no hosts)
+    eco_homeowner_price_cents: int = 14900
+    eco_hardware_retail_cents: int = 10000
+    eco_evergy_rebate_cents: int = 5000
+    eco_lowes_pro_discount_pct: float = 0.10
+    eco_installer_pay_cents: int = 4000
+    eco_daily_door_goal: int = 4
+    eco_focus_zips: str = "64108,64109,64110,64111,64112,64113,64114,64123,64124,64127,64128,64130,64131,64132,64133,64134,64137,64138"
+    eco_year_built_min: int = 1970
+    eco_year_built_max: int = 2005
+    lowes_pro_account_id: str = ""
+    evergy_rebate_program_id: str = ""
 
     @property
     def cors_origin_list(self) -> list[str]:

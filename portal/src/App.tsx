@@ -58,6 +58,8 @@ function Dashboard() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [leadPipeline, setLeadPipeline] = useState<LeadPipeline | null>(null);
   const [launchDeck, setLaunchDeck] = useState<LaunchDeck | null>(null);
+  const [ecoJobs, setEcoJobs] = useState<Array<Record<string, unknown>>>([]);
+  const [ecoEconomics, setEcoEconomics] = useState<Record<string, unknown> | null>(null);
   const [sovereign, setSovereign] = useState<SovereignStatus | null>(null);
   const [health, setHealth] = useState<HealthSnapshot | null>(null);
   const [launchBusy, setLaunchBusy] = useState(false);
@@ -77,7 +79,7 @@ function Dashboard() {
 
   const refresh = useCallback(async () => {
     try {
-      const [b, t, d, v, a, cap, acq, cats, ld, sov, h, deck, pipe] = await Promise.all([
+      const [b, t, d, v, a, cap, acq, cats, ld, sov, h, deck, pipe, eco, ej] = await Promise.all([
         api.briefing(),
         api.tasks(),
         api.decisions(),
@@ -91,6 +93,8 @@ function Dashboard() {
         api.health().catch(() => null),
         api.launchStatus().catch(() => null),
         api.leadPipeline().catch(() => null),
+        api.ecoStatus().catch(() => null),
+        api.ecoJobs().catch(() => []),
       ]);
       setBriefing(b);
       setTasks(t);
@@ -104,6 +108,8 @@ function Dashboard() {
       setHealth(h);
       setLaunchDeck(deck);
       setLeadPipeline(pipe);
+      setEcoEconomics((eco as { economics?: Record<string, unknown> })?.economics ?? null);
+      setEcoJobs(ej);
       const categoryMap: Record<string, string> = cats.categories ?? {};
       setCategories(categoryMap);
       if (Object.keys(categoryMap).length && !categoryMap[addCategory]) {
@@ -157,16 +163,31 @@ function Dashboard() {
     }
   }
 
+  async function handleEcoStrike() {
+    setLaunchBusy(true);
+    setLaunchStatus(null);
+    try {
+      const result = await api.ecoStrikeList();
+      const count = (result.strike_list as unknown[])?.length ?? 0;
+      setLaunchStatus(`Strike list: ${count} KCMO doors queued for hunters.`);
+      await refresh();
+    } catch (err) {
+      setLaunchStatus(err instanceof Error ? err.message : "Strike list failed");
+    } finally {
+      setLaunchBusy(false);
+    }
+  }
+
   async function handleKillShot(drill = false) {
     setLaunchBusy(true);
     setLaunchStatus(null);
     try {
-      const result = await api.killShot(leadCity || "Kansas City", drill);
-      const hunted = (result.hunt as { hunted?: number } | null)?.hunted ?? 0;
+      const result = await api.killShot("Kansas City", drill);
+      const hunted = (result.hunt as { strike_list?: unknown[] } | null)?.strike_list?.length ?? 0;
       setLaunchStatus(
         drill
-          ? `Drill complete. ${hunted} leads hunted. Intent queued.`
-          : `KILL SHOT LIVE. ${hunted} leads hunted. Closers go. Call SARA now.`,
+          ? `Eco-Express drill. ${hunted} doors on strike list.`
+          : `ECO-EXPRESS LIVE. ${hunted} doors targeted. Hunters deploy tomorrow.`,
       );
       await refresh();
     } catch (err) {
@@ -296,25 +317,22 @@ function Dashboard() {
           <p className="loading">Loading command deck...</p>
         ) : tab === "launch" ? (
           <div className="grid-2">
-            <Panel title="Launch — automated" wide>
+            <Panel title="Eco-Express — D2C thermostat flips" wide>
               <div className="launch-hero">
-                <p className="launch-phone">
-                  <a href="tel:+19713820038">
-                    {launchDeck?.sara_phone || "+1 (971) 382-0038"}
-                  </a> — SARA
+                <p className="launch-phrase">
+                  <strong>No hosts.</strong> Hunters close $149 at the door. RAH installs in 15 min.
+                  {ecoEconomics && (
+                    <> Net <strong>${String(ecoEconomics.net_profit_usd)}</strong>/door.</>
+                  )}
                 </p>
                 <div className="launch-badges">
                   <span className={`badge ${launchDeck?.sara_wired ? "badge-completed" : "badge-pending"}`}>
-                    SARA {launchDeck?.sara_wired ? "wired" : "run Wire SARA workflow"}
+                    SARA {launchDeck?.sara_wired ? "wired" : "run Wire SARA"}
                   </span>
                   <span className="badge badge-completed">
-                    {leadPipeline?.total ?? 0} leads in pipeline
+                    {ecoJobs.length} doors in pipeline
                   </span>
-                  {sovereign && (
-                    <span className="badge badge-completed">
-                      {sovereign.scale.hosts_locked}/3 hosts · {sovereign.scale.focus_city || "Kansas City"}
-                    </span>
-                  )}
+                  <span className="badge badge-completed">KCMO · Evergy rebate stack</span>
                 </div>
               </div>
               <div className="launch-actions">
@@ -324,15 +342,15 @@ function Dashboard() {
                   disabled={launchBusy}
                   onClick={() => handleKillShot(false)}
                 >
-                  {launchBusy ? "Launching…" : "KILL SHOT — LAUNCH LIVE"}
+                  {launchBusy ? "Launching…" : "LAUNCH ECO-EXPRESS LIVE"}
                 </button>
                 <button
                   type="button"
                   className="btn-hunt"
                   disabled={launchBusy}
-                  onClick={handleHuntLeads}
+                  onClick={handleEcoStrike}
                 >
-                  {launchBusy ? "Hunting…" : "HUNT LEADS NOW (auto)"}
+                  {launchBusy ? "Building…" : "BUILD STRIKE LIST (Loop A)"}
                 </button>
                 <button
                   type="button"
@@ -344,42 +362,42 @@ function Dashboard() {
                 </button>
               </div>
               <p className="launch-hint">
-                Focus: <strong>3 hosts in Kansas City</strong> — easiest market. Lock all 3 before scaling.
-                Kill shot = auto-hunt + launch. Presale pays closers ($150 door).
+                $149 homeowner − ~$50 hardware (rebate) − $40 installer = <strong>$59 net</strong>.
+                Goal 4/day. Cash vault → your own properties later. Manual: vault/commander/eco-express-play.md
               </p>
             </Panel>
-            <Panel title="Lead pipeline (auto-filled)">
-              {!leadPipeline || leadPipeline.total === 0 ? (
-                <EmptyState text="No leads yet — tap HUNT LEADS NOW or KILL SHOT." />
+            <Panel title="Strike list — homeowner doors">
+              {ecoJobs.length === 0 ? (
+                <EmptyState text="No doors yet — tap BUILD STRIKE LIST or LAUNCH LIVE." />
               ) : (
-                <>
-                  <p className="pipeline-stats">
-                    {leadPipeline.with_phone} callable · {leadPipeline.needs_lookup} need lookup
-                  </p>
-                  {leadPipeline.recent.map((l) => (
-                    <div key={l.id} className="row-item compact">
-                      <div className="row-main">
-                        <strong>{l.name}</strong>
-                        <p>{l.city} · {l.has_phone ? l.phone : "phone pending"}</p>
-                      </div>
-                      <span className="badge">{l.status}</span>
+                ecoJobs.slice(0, 20).map((j) => (
+                  <div key={String(j.id)} className="row-item compact">
+                    <div className="row-main">
+                      <strong>{String(j.homeowner_name)}</strong>
+                      <p>{String(j.address)} · {String(j.phone)}</p>
                     </div>
-                  ))}
-                </>
+                    <span className="badge">{String(j.status)}</span>
+                  </div>
+                ))
               )}
             </Panel>
-            <Panel title="Record presale ($150 door)">
-              <form className="add-form" onSubmit={handlePresale}>
-                <label>Host<input value={presaleHost} onChange={(e) => setPresaleHost(e.target.value)} required /></label>
-                <label>Address<input value={presaleAddress} onChange={(e) => setPresaleAddress(e.target.value)} required /></label>
-                <label>City grid<input value={presaleCity} onChange={(e) => setPresaleCity(e.target.value)} required /></label>
-                <label>Closer ref<input value={presaleWorker} onChange={(e) => setPresaleWorker(e.target.value)} /></label>
-                <label>Proof<input value={presaleProof} onChange={(e) => setPresaleProof(e.target.value)} placeholder="Cash App screenshot" /></label>
-                <label className="checkbox-row">
-                  <input type="checkbox" checked={presaleDrill} onChange={(e) => setPresaleDrill(e.target.checked)} />
-                  Drill only (no live closer payout)
-                </label>
-                <button type="submit" className="btn-primary">Record presale</button>
+            <Panel title="Loop B — homeowner paid $149">
+              <form className="add-form" onSubmit={async (e) => {
+                e.preventDefault();
+                setLaunchStatus(null);
+                try {
+                  const jobId = parseInt(presaleHost, 10);
+                  await api.ecoPaymentConfirmed(jobId, presaleProof, presaleCity || "ASAP");
+                  setLaunchStatus("Payment confirmed — Lowe's barcode + installer dispatched.");
+                  await refresh();
+                } catch (err) {
+                  setLaunchStatus(err instanceof Error ? err.message : "Payment flow failed");
+                }
+              }}>
+                <label>Job ID<input value={presaleHost} onChange={(e) => setPresaleHost(e.target.value)} required placeholder="from strike list" /></label>
+                <label>Payment proof<input value={presaleProof} onChange={(e) => setPresaleProof(e.target.value)} required placeholder="Stripe / Cash App ref" /></label>
+                <label>Install slot<input value={presaleCity} onChange={(e) => setPresaleCity(e.target.value)} placeholder="ASAP or 4:00 PM" /></label>
+                <button type="submit" className="btn-primary">Confirm payment → dispatch install</button>
               </form>
             </Panel>
             <Panel title="Voice / chat (optional)">
@@ -389,7 +407,7 @@ function Dashboard() {
                   <input
                     value={chatMessage}
                     onChange={(e) => setChatMessage(e.target.value)}
-                    placeholder="launch sovereign stay live"
+                    placeholder="launch eco express live"
                   />
                 </label>
                 <button type="submit" className="btn-primary">Send</button>

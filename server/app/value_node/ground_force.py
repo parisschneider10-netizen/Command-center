@@ -103,6 +103,19 @@ MISSION_TEMPLATES = {
         "default_pay_cents": 2500,
         "tags": ["sovereign-stay", "checkout", "turnover"],
     },
+    "eco_thermostat_install": {
+        "title": "Eco-Express Thermostat Install — {neighborhood}",
+        "description": (
+            "15-MINUTE SMART THERMOSTAT SWAP at {address}. "
+            "1. Pick up prepaid unit at Lowe's — barcode in mission notes. "
+            "2. Replace legacy wall thermostat with Wi-Fi smart unit. "
+            "3. Connect to homeowner Wi-Fi. "
+            "4. Upload photo: thermostat screen ON showing Wi-Fi icon. "
+            "PAY ON COMPLETION — $40. Payout frozen without valid photo."
+        ),
+        "default_pay_cents": 4000,
+        "tags": ["eco-express", "thermostat", "install", "kcmo"],
+    },
 }
 
 
@@ -152,6 +165,8 @@ async def deploy_mission(
             }
         )
     description = template["description"].format(**fmt)
+    if mission_type == "eco_thermostat_install":
+        description += f"\n\nLOWE'S PICKUP BARCODE: see job briefing in portal."
 
     mission = GroundForceMission(
         mission_type=mission_type,

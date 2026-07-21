@@ -270,4 +270,13 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ city, hunt_leads: true, max_leads: 25, drill }),
     }),
+  ecoStatus: () => request<Record<string, unknown>>("/api/eco-express/status"),
+  ecoStrikeList: () =>
+    request<Record<string, unknown>>("/api/eco-express/strike-list", { method: "POST" }),
+  ecoJobs: () => request<Array<Record<string, unknown>>>("/api/eco-express/jobs"),
+  ecoPaymentConfirmed: (jobId: number, payment_proof: string, scheduled_slot = "ASAP") =>
+    request<Record<string, unknown>>(`/api/eco-express/jobs/${jobId}/payment-confirmed`, {
+      method: "POST",
+      body: JSON.stringify({ payment_proof, scheduled_slot, dry_run: false }),
+    }),
 };

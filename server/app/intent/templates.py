@@ -89,6 +89,16 @@ SOVEREIGN_STAY_TEMPLATE = {
     ],
 }
 
+ECO_EXPRESS_TEMPLATE = {
+    "name": "eco_express_d2c",
+    "phases": [
+        {"phase": 1, "title": "Strike list", "owner": "agent", "detail": "POST /api/eco-express/strike-list — KCMO zip clusters 1970-2005 housing"},
+        {"phase": 2, "title": "Hunter close", "owner": "human", "detail": "$149 homeowner invoice before work — Evergy rebate pitch at door"},
+        {"phase": 3, "title": "Hardware + install", "owner": "system", "detail": "Payment → Lowe's barcode + RAH $40 install — net $59/door"},
+        {"phase": 4, "title": "QC net-48", "owner": "system", "detail": "Wi-Fi photo proof or freeze installer payout"},
+    ],
+}
+
 OVERWATCH_MIGRATION_TEMPLATE = {
     "name": "overwatch_replit_migration",
     "phases": [
@@ -101,7 +111,8 @@ OVERWATCH_MIGRATION_TEMPLATE = {
 
 INTENT_MATCHERS: list[dict] = [
     {"keywords": ["wire sara", "connect vapi", "connect sara", "vapi key", "voice live", "machine wire", "obsolete click"], "template": WIRE_SARA_TEMPLATE},
-    {"keywords": ["launch", "go live", "autopilot", "replace humans", "one man"], "template": SOVEREIGN_STAY_TEMPLATE},
+    {"keywords": ["launch", "go live", "autopilot", "replace humans", "one man"], "template": ECO_EXPRESS_TEMPLATE},
+    {"keywords": ["eco express", "eco-express", "thermostat", "evergy", "lowes", "d2c", "smart home"], "template": ECO_EXPRESS_TEMPLATE},
     {"keywords": ["overwatch", "replit", "migrate overwatch", "command center website"], "template": OVERWATCH_MIGRATION_TEMPLATE},
     {"keywords": ["sovereign stay", "sovereign", "v1_core", "egoist", "3 hosts", "kansas city", "focus"], "template": SOVEREIGN_STAY_TEMPLATE},
     {"keywords": ["deploy", "vps", "servury", "command deck", "online", "docker"], "template": DEPLOY_TEMPLATE},

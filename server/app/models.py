@@ -462,6 +462,36 @@ class SovereignCloserPayout(Base):
     paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
+class EcoExpressJob(Base):
+    """D2C smart thermostat install — homeowner pays, RAH installs, no hosts."""
+
+    __tablename__ = "eco_express_jobs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    homeowner_name: Mapped[str] = mapped_column(String(255))
+    phone: Mapped[str] = mapped_column(String(32), index=True)
+    address: Mapped[str] = mapped_column(Text)
+    zip_code: Mapped[str] = mapped_column(String(16), index=True)
+    neighborhood: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    year_built: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    status: Mapped[str] = mapped_column(String(32), default="targeted")
+    scheduled_slot: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    homeowner_paid_cents: Mapped[int] = mapped_column(Integer, default=14900)
+    hardware_cost_cents: Mapped[int] = mapped_column(Integer, default=5000)
+    installer_pay_cents: Mapped[int] = mapped_column(Integer, default=4000)
+    payment_ledger_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    hunter_mission_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    install_mission_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    lowes_pickup_barcode: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    payment_proof: Mapped[str | None] = mapped_column(Text, nullable=True)
+    thermostat_photo_proof: Mapped[str | None] = mapped_column(Text, nullable=True)
+    payout_frozen: Mapped[bool] = mapped_column(default=False)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
 class HumanEscalation(Base):
     __tablename__ = "human_escalations"
 
