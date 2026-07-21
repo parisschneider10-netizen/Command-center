@@ -30,6 +30,8 @@ DEFAULT_BADGES = ["FREE_CHECKOUT_RIDE", "VERIFIED_MATCHDAY_WASH"]
 MATRIX_CONFIG = {
     "target_cities": lambda: settings.sovereign_target_cities,
     "units_per_city": lambda: settings.sovereign_units_per_city,
+    "focus_city": lambda: settings.sovereign_focus_city,
+    "max_hosts": lambda: settings.sovereign_target_cities * settings.sovereign_units_per_city,
     "upfront_fee_usd": lambda: settings.sovereign_upfront_fee_cents / 100,
     "closer_bounty_usd": lambda: settings.sovereign_closer_bounty_cents / 100,
     "management_fee_pct": lambda: settings.sovereign_management_fee_pct,
@@ -98,11 +100,12 @@ async def matrix_status(db: AsyncSession) -> dict:
     ) or 0
     return {
         "system": "SOVEREIGN_STAY_SYSTEMS_V1_CORE",
-        "purpose": "Automated asset-light arbitrage — 24mo stealth baseline",
+        "purpose": f"Focus play — {cfg['max_hosts']} hosts in {cfg['focus_city']}. Scale cities later.",
         "config": cfg,
         "scale": {
             "target_cities": cfg["target_cities"],
             "units_per_city": cfg["units_per_city"],
+            "focus_city": cfg["focus_city"],
             "max_units": max_units,
             "cities_initialized": cities,
             "hosts_locked": locked_hosts,
@@ -112,8 +115,8 @@ async def matrix_status(db: AsyncSession) -> dict:
         "vault_reserve_usd": round(vault_cents / 100, 2),
         "badges_default": DEFAULT_BADGES,
         "voice_summary": (
-            f"Sovereign Stay: {locked_hosts}/{max_units} units locked across "
-            f"{cfg['target_cities']} city grid. ${float_cents/100:.0f} net float."
+            f"Sovereign Stay: {locked_hosts}/{max_units} hosts locked in {cfg['focus_city']}. "
+            f"${float_cents/100:.0f} net float. Scale to more cities when these 3 are cash-flowing."
         ),
     }
 

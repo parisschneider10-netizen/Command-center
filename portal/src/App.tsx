@@ -312,7 +312,7 @@ function Dashboard() {
                   </span>
                   {sovereign && (
                     <span className="badge badge-completed">
-                      {sovereign.scale.hosts_locked}/{sovereign.scale.max_units} locked
+                      {sovereign.scale.hosts_locked}/3 hosts · {sovereign.scale.focus_city || "Kansas City"}
                     </span>
                   )}
                 </div>
@@ -344,7 +344,8 @@ function Dashboard() {
                 </button>
               </div>
               <p className="launch-hint">
-                Kill shot = auto-hunt leads + launch intent live. No manual entry. Money path: leads → closers → $150 presale.
+                Focus: <strong>3 hosts in Kansas City</strong> — easiest market. Lock all 3 before scaling.
+                Kill shot = auto-hunt + launch. Presale pays closers ($150 door).
               </p>
             </Panel>
             <Panel title="Lead pipeline (auto-filled)">

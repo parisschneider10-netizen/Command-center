@@ -166,6 +166,7 @@ export interface SovereignStatus {
     slots_remaining: number;
     max_units: number;
     target_cities: number;
+    focus_city?: string;
   };
   float_usd: number;
   vault_reserve_usd: number;

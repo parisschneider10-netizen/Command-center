@@ -19,9 +19,9 @@ router = APIRouter(prefix="/api/launch", tags=["launch"])
 
 
 class KillShotIn(BaseModel):
-    city: str = Field(default="Kansas City")
+    city: str = Field(default_factory=lambda: settings.sovereign_focus_city)
     hunt_leads: bool = Field(default=True, description="Auto-hunt leads before launch")
-    max_leads: int = Field(default=25, ge=1, le=50)
+    max_leads: int = Field(default=15, ge=1, le=50)
     drill: bool = Field(default=False, description="Drill only — no live closer payouts")
 
 
@@ -42,6 +42,8 @@ async def launch_status(
         "sara_wired": wire.get("wired", False),
         "sara_phone": settings.sara_phone_e164,
         "leads_in_pipeline": total,
+        "focus_city": settings.sovereign_focus_city,
+        "max_hosts": settings.sovereign_target_cities * settings.sovereign_units_per_city,
         "auto_hunt": True,
         "kill_shot_endpoint": "POST /api/launch/kill-shot",
         "hunt_endpoint": "POST /api/leads/hunt",
@@ -67,7 +69,7 @@ async def kill_shot(
     mode = "drill" if body.drill else "live"
     intent_text = (
         f"Launch Sovereign Stay MTR. {mode}. Max speed. Auto execute. "
-        f"City: {body.city}. Feed closers from hunted leads."
+        f"Focus: lock 3 hosts in {body.city} only. Scale cities later."
     )
     intent = await plan_intent(db, intent_text=intent_text, source="kill_shot")
     execution = None
@@ -89,8 +91,8 @@ async def kill_shot(
         "intent_id": intent.id,
         "execution": execution,
         "next": [
-            "Closers hit hunted leads with phones",
-            "Record presale when $150 collected at door",
+            f"Lock 3 hosts in {body.city} — presale at door",
+            "Record presale when $150 collected",
             f"Call SARA: {settings.sara_phone_e164}",
         ],
     }

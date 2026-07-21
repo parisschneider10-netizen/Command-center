@@ -31,7 +31,7 @@ async def get_matrix_status(
     db: AsyncSession = Depends(get_db),
     _: str = Depends(get_current_user),
 ) -> dict:
-    """40 cities × 3 units — empire matrix snapshot."""
+    """Focus play: 3 hosts in one city — matrix snapshot."""
     return await matrix_status(db)
 
 

@@ -115,11 +115,12 @@ async def _duckduckgo_search(query: str) -> list[dict]:
 async def hunt_leads(
     db: AsyncSession,
     *,
-    city: str = "Kansas City",
-    max_leads: int = 25,
+    city: str | None = None,
+    max_leads: int = 15,
     source: str = "auto_hunt",
 ) -> dict:
     """Search web → parse contacts → register leads. Fully automated."""
+    city = city or settings.sovereign_focus_city
     seen_phones: set[str] = set()
     seen_names: set[str] = set()
     created: list[dict] = []

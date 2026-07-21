@@ -23,8 +23,8 @@ class LeadBatchIn(BaseModel):
 
 
 class LeadHuntIn(BaseModel):
-    city: str = Field(default="Kansas City")
-    max_leads: int = Field(default=25, ge=1, le=50)
+    city: str = Field(default_factory=lambda: settings.sovereign_focus_city)
+    max_leads: int = Field(default=15, ge=1, le=50)
 
 
 def _verify_lead_secret(x_lead_secret: str | None) -> None:

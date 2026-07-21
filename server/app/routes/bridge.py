@@ -106,8 +106,8 @@ async def bridge_status(_: str = Depends(get_current_user)) -> dict:
             "3. Call SARA once machine-wire completes",
         ],
         "money_play_after_deploy": [
-            "Sovereign Stay presale → POST /api/sovereign-stay/presale (sandbox instant treasury)",
-            "40 cities × 3 units — funded sandbox grid",
+            "Sovereign Stay presale → POST /api/sovereign-stay/presale — focus 3 hosts Kansas City",
+            "Focus: 3 hosts in Kansas City — scale cities when cash-flowing",
             "Ground force deploy → /api/ground-force/deploy",
             "Treasury ammo → sovereign acquisitions auto-fund on instant clear",
         ],

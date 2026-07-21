@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""  # Claude — Ready Room handwritten vision (preferred if set)
     llm_api_key: str = ""  # Commander alias (LLM_API_KEY) — OpenAI-compatible vision fallback
     expansion_dry_run: bool = True
-    expansion_max_cities: int = 40
+    expansion_max_cities: int = 1
     expansion_vps_cost_cents: int = 399
     expansion_live_batch_cap: int = 5
     treasury_hold_hours: int = 48
@@ -60,8 +60,9 @@ class Settings(BaseSettings):
     intent_auto_post_rah: bool = True
     kcmo_max_units: int = 30
     treasury_sales_close_hold_hours: int = 4
-    sovereign_target_cities: int = 40
+    sovereign_target_cities: int = 1
     sovereign_units_per_city: int = 3
+    sovereign_focus_city: str = "Kansas City"
     sovereign_upfront_fee_cents: int = 15000
     sovereign_closer_bounty_cents: int = 3000
     sovereign_management_fee_pct: float = 0.10

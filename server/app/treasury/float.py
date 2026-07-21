@@ -23,7 +23,7 @@ async def record_host_payment(
     """
     Host pays upfront. Funds enter hold before worker payout.
     sales_close: 4h hold — ground force closer paid fast after on-site prepay.
-    sandbox_instant: cleared immediately — ammo pools funded in real time (40×3 sandbox).
+    sandbox_instant: cleared immediately — ammo pools funded in real time (3-host focus sandbox).
     """
     from app.treasury.allocation import allocate_cleared_revenue
 

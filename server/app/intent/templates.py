@@ -85,7 +85,7 @@ SOVEREIGN_STAY_TEMPLATE = {
         {"phase": 1, "title": "Doorstep presale", "owner": "human", "detail": "POST /api/sovereign-stay/presale — $150 in, $30 closer, $120 float"},
         {"phase": 2, "title": "Badge + buyback brain", "owner": "agent", "detail": "POST optimize — badges boost velocity, buyback if vacancy >30%"},
         {"phase": 3, "title": "Checkout actuators", "owner": "human", "detail": "POST checkout — RentAHuman turnover + partner kickback"},
-        {"phase": 4, "title": "Scale grid", "owner": "agent", "detail": "3 units × 40 cities = 120 evergreen units"},
+        {"phase": 4, "title": "Lock 3 hosts", "owner": "agent", "detail": "Kansas City only — 3 hosts total. Prove cash flow before next city."},
     ],
 }
 
@@ -103,7 +103,7 @@ INTENT_MATCHERS: list[dict] = [
     {"keywords": ["wire sara", "connect vapi", "connect sara", "vapi key", "voice live", "machine wire", "obsolete click"], "template": WIRE_SARA_TEMPLATE},
     {"keywords": ["launch", "go live", "autopilot", "replace humans", "one man"], "template": SOVEREIGN_STAY_TEMPLATE},
     {"keywords": ["overwatch", "replit", "migrate overwatch", "command center website"], "template": OVERWATCH_MIGRATION_TEMPLATE},
-    {"keywords": ["sovereign stay", "sovereign", "v1_core", "egoist", "40 cities", "3 units"], "template": SOVEREIGN_STAY_TEMPLATE},
+    {"keywords": ["sovereign stay", "sovereign", "v1_core", "egoist", "3 hosts", "kansas city", "focus"], "template": SOVEREIGN_STAY_TEMPLATE},
     {"keywords": ["deploy", "vps", "servury", "command deck", "online", "docker"], "template": DEPLOY_TEMPLATE},
     {"keywords": ["welcome basket", "basket", "new host", "welcome kit"], "template": KC_WELCOME_BASKET_TEMPLATE},
     {"keywords": ["world cup", "blitz", "lock 30", "kcmo", "close sale"], "template": KC_WORLD_CUP_BLITZ_TEMPLATE},
