@@ -104,6 +104,9 @@ class Settings(BaseSettings):
     eco_year_built_max: int = 2005
     lowes_pro_account_id: str = ""
     evergy_rebate_program_id: str = ""
+    # Sensation vs action — block auto-execute below this vision confidence (0–1)
+    uncertainty_confidence_threshold: float = 0.85
+    eco_primary_city: str = "Kansas City"
 
     @property
     def cors_origin_list(self) -> list[str]:

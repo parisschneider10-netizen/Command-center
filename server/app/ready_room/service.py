@@ -192,6 +192,8 @@ type: intent
 status: pending
 mode: drill
 auto_execute: true
+confidence_score: 0.85
+uncertainty_reason: ""
 intent: "<single clear intent sentence>"
 tags: [ready-room, handwritten]
 source: ready-room-handwritten
@@ -211,7 +213,12 @@ source: ready-room-handwritten
 ## Suggested kill-shot phrase
 <one voice command line if launch-related>
 
-If mode cannot be determined, use mode: drill. Never invent financial numbers not on the page."""
+RULES:
+- confidence_score: 0.0–1.0 — how sure you are the extraction is correct (0.85+ only if clearly legible)
+- If handwriting is messy, partial, or ambiguous: set confidence_score below 0.70 and explain in uncertainty_reason
+- If illegible: set confidence_score to 0.2, illegible: true, uncertainty_reason with what failed
+- If mode cannot be determined, use mode: drill
+- Never invent financial numbers not on the page"""
 
 
 async def extract_handwritten_note(image_bytes: bytes, mime: str = "image/jpeg") -> str:
@@ -258,6 +265,7 @@ async def save_handwritten_extraction(
     *,
     original_name: str,
     mime: str = "image/jpeg",
+    db: "AsyncSession | None" = None,
 ) -> dict:
     root = ready_room_root()
     now = datetime.now(timezone.utc)
@@ -273,8 +281,31 @@ async def save_handwritten_extraction(
     md_path.write_text(extracted, encoding="utf-8")
 
     meta, _ = parse_frontmatter(extracted)
-    intent_path = None
-    if meta.get("type") == "intent" and meta.get("intent"):
+    from app.uncertainty.service import below_threshold, parse_confidence, queue_review
+
+    if below_threshold(confidence) and db is not None:
+        review = await queue_review(
+            db,
+            source_node="Vision_OCR_Engine",
+            payload={
+                "intent": meta.get("intent", ""),
+                "mode": meta.get("mode", "drill"),
+                "extracted_preview": extracted[:2000],
+                "suggested_intent": meta.get("intent", ""),
+                "original_name": original_name,
+            },
+            confidence_score=confidence,
+            reason=reason,
+            vault_path=str(image_path.relative_to(Path(settings.vault_path))),
+        )
+        uncertainty_id = review.id
+        meta["uncertainty_held"] = True
+        meta["status"] = "uncertainty_held"
+        extracted_lines = extracted.split("---", 2)
+        if len(extracted_lines) >= 3:
+            extracted = f"---{extracted_lines[1]}---\n\n{extracted_lines[2]}"
+        md_path.write_text(extracted, encoding="utf-8")
+    elif meta.get("type") == "intent" and meta.get("intent"):
         intent_path = root / "intent" / f"{stamp}-{slug}-from-handwritten.md"
         intent_path.write_text(extracted, encoding="utf-8")
 
@@ -284,6 +315,10 @@ async def save_handwritten_extraction(
         "intent_path": str(intent_path.relative_to(Path(settings.vault_path))) if intent_path else None,
         "intent": meta.get("intent", ""),
         "mode": meta.get("mode", "drill"),
+        "confidence_score": confidence,
+        "uncertainty_held": bool(uncertainty_id),
+        "uncertainty_review_id": uncertainty_id,
+        "reason": reason,
     }
 
 
@@ -308,7 +343,7 @@ def append_layer1_ledger(event: dict) -> Path:
     return ledger
 
 
-async def process_handwritten_note(image_path: str | Path) -> dict:
+async def process_handwritten_note(image_path: str | Path, db: "AsyncSession | None" = None) -> dict:
     """
     Commander's process_handwritten_note — Ready Room vault ingest.
 
@@ -337,8 +372,28 @@ async def process_handwritten_note(image_path: str | Path) -> dict:
     md_path.write_text(extracted, encoding="utf-8")
 
     meta, _ = parse_frontmatter(extracted)
+    from app.uncertainty.service import below_threshold, parse_confidence, queue_review
+
+    confidence, reason = parse_confidence(meta, extracted)
     intent_path = None
-    if meta.get("type") == "intent" and meta.get("intent"):
+    uncertainty_id = None
+    if below_threshold(confidence) and db is not None:
+        review = await queue_review(
+            db,
+            source_node="Vision_OCR_Engine",
+            payload={
+                "intent": meta.get("intent", ""),
+                "mode": meta.get("mode", "drill"),
+                "extracted_preview": extracted[:2000],
+                "suggested_intent": meta.get("intent", ""),
+                "image": str(path.name),
+            },
+            confidence_score=confidence,
+            reason=reason,
+            vault_path=str(path.relative_to(Path(settings.vault_path))),
+        )
+        uncertainty_id = review.id
+    elif meta.get("type") == "intent" and meta.get("intent"):
         intent_path = root / "intent" / f"{stamp}-{slug}-from-handwritten.md"
         intent_path.write_text(extracted, encoding="utf-8")
 
@@ -349,6 +404,8 @@ async def process_handwritten_note(image_path: str | Path) -> dict:
             "extracted": str(md_path.name),
             "intent": meta.get("intent", ""),
             "mode": meta.get("mode", "drill"),
+            "confidence_score": confidence,
+            "uncertainty_held": bool(uncertainty_id),
         }
     )
     _ingested_marker(path).write_text(md_path.name, encoding="utf-8")
@@ -361,10 +418,14 @@ async def process_handwritten_note(image_path: str | Path) -> dict:
         "ledger_path": str(ledger_path),
         "intent": meta.get("intent", ""),
         "mode": meta.get("mode", "drill"),
+        "confidence_score": confidence,
+        "uncertainty_held": bool(uncertainty_id),
+        "uncertainty_review_id": uncertainty_id,
+        "reason": reason,
     }
 
 
-async def scan_handwritten_inbox() -> dict:
+async def scan_handwritten_inbox(db: "AsyncSession | None" = None) -> dict:
     """Auto-ingest new images in ready-room/handwritten/ (Obsidian drop folder)."""
     root = ready_room_root() / "handwritten"
     outcomes = []
@@ -374,7 +435,7 @@ async def scan_handwritten_inbox() -> dict:
         if _ingested_marker(path).exists():
             continue
         try:
-            result = await process_handwritten_note(path)
+            result = await process_handwritten_note(path, db=db)
             outcomes.append({"file": path.name, "ok": True, **result})
         except Exception as exc:
             outcomes.append({"file": path.name, "ok": False, "error": str(exc)})

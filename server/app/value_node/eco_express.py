@@ -78,7 +78,7 @@ async def eco_status(db: AsyncSession) -> dict:
     return {
         "program": "Eco-Express",
         "tagline": "D2C smart thermostat flips — zero hosts",
-        "focus": "Kansas City metro",
+        "focus": f"{settings.eco_primary_city} metro (Evergy rebate MO)",
         "zips": focus_zips(),
         "year_built_window": [settings.eco_year_built_min, settings.eco_year_built_max],
         "economics": econ,
@@ -102,8 +102,17 @@ async def generate_strike_list(
     max_targets: int = 30,
 ) -> dict:
     """Loop A — hunt KCMO homeowners in focus zips, queue as targeted jobs."""
-    hunt = await hunt_leads(db, city="Kansas City", max_leads=max_targets, source="eco_strike")
+    zips = focus_zips()
+    hunt = await hunt_leads(
+        db,
+        city=settings.eco_primary_city,
+        max_leads=max_targets,
+        source="eco_strike",
+        profile="eco_homeowner",
+        focus_zips=zips,
+    )
     created = []
+    zip_idx = 0
     for item in hunt.get("leads", []):
         phone = item.get("phone", "")
         if phone.startswith("pending-"):
@@ -113,11 +122,13 @@ async def generate_strike_list(
         )
         if existing.scalar_one_or_none():
             continue
+        zip_code = zips[zip_idx % len(zips)] if zips else "64111"
+        zip_idx += 1
         job = EcoExpressJob(
             homeowner_name=item.get("name", "Homeowner")[:255],
             phone=phone,
-            address=item.get("name", "See hunter sheet")[:500],
-            zip_code=focus_zips()[0] if focus_zips() else "64111",
+            address=(item.get("address") or f"{item.get('name', 'Residential')} — {zip_code} KCMO")[:500],
+            zip_code=zip_code,
             neighborhood="KCMO",
             year_built=1985,
             status="targeted",
@@ -313,3 +324,21 @@ async def list_jobs(db: AsyncSession, limit: int = 50) -> list[dict]:
             }
         )
     return rows
+
+
+async def hunter_close_sheet(db: AsyncSession) -> dict:
+    """Printable strike sheet for field closer — phones + pitch."""
+    jobs = await list_jobs(db, limit=50)
+    ready = [j for j in jobs if j["status"] in ("targeted", "hunter_ready")]
+    return {
+        "city": settings.eco_primary_city,
+        "why_this_city": (
+            "Kansas City MO — Evergy rebate stack, 1970–2005 housing stock, "
+            "suburban doors without host/STR complexity."
+        ),
+        "pitch": HUNTER_DOOR_PITCH,
+        "collect_usd": settings.eco_homeowner_price_cents / 100,
+        "doors": ready,
+        "count": len(ready),
+        "with_phone": sum(1 for j in ready if j.get("phone") and not str(j["phone"]).startswith("pending")),
+    }

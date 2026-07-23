@@ -89,6 +89,7 @@ class DashboardStats(BaseModel):
     decisions_pending: int
     voice_sessions_today: int
     recent_activity_count: int
+    uncertainty_pending: int = 0
 
 
 class BriefingOut(BaseModel):

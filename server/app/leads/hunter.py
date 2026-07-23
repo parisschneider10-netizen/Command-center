@@ -28,6 +28,17 @@ HUNT_QUERIES = [
     "{city} STR co-host property manager",
 ]
 
+# Eco-Express — homeowner doors (Evergy rebate geography = KCMO MO zips)
+ECO_HUNT_QUERIES = [
+    "{zip} Kansas City MO neighborhood association contact phone",
+    "{city} Missouri homeowner neighborhood council phone",
+    "Evergy energy efficiency rebate {city} Missouri residential",
+    "{zip} Kansas City MO community association president contact",
+    "{city} MO residential HVAC thermostat upgrade homeowner",
+    "{zip} Brookside Kansas City homeowner association",
+    "{zip} Waldo Kansas City neighborhood contact",
+]
+
 
 def _normalize_phone(raw: str) -> str:
     digits = re.sub(r"\D", "", raw)
@@ -118,19 +129,32 @@ async def hunt_leads(
     city: str | None = None,
     max_leads: int = 15,
     source: str = "auto_hunt",
+    profile: str = "str",
+    focus_zips: list[str] | None = None,
 ) -> dict:
     """Search web → parse contacts → register leads. Fully automated."""
     city = city or settings.sovereign_focus_city
+    zips = focus_zips or [z.strip() for z in settings.eco_focus_zips.split(",") if z.strip()]
     seen_phones: set[str] = set()
     seen_names: set[str] = set()
     created: list[dict] = []
     skipped = 0
     engine = "duckduckgo"
 
-    for template in HUNT_QUERIES:
+    if profile == "eco_homeowner":
+        templates = ECO_HUNT_QUERIES
+        crisis = "Eco-Express-Homeowner"
+    else:
+        templates = HUNT_QUERIES
+        crisis = "Auto-Hunt-STR-MTR"
+
+    zip_idx = 0
+    for template in templates:
         if len(created) >= max_leads:
             break
-        query = template.format(city=city)
+        zip_code = zips[zip_idx % len(zips)] if zips else "64111"
+        zip_idx += 1
+        query = template.format(city=city, zip=zip_code)
         try:
             if settings.brave_search_api_key:
                 engine = "brave"
@@ -160,7 +184,7 @@ async def hunt_leads(
                 continue
             seen_phones.add(key)
             seen_names.add(name_key)
-            lead = await register_lead(db, parsed, source=source)
+            lead = await register_lead(db, {**parsed, "crisis_type": crisis}, source=source)
             created.append(
                 {
                     "id": lead.id,
@@ -175,6 +199,7 @@ async def hunt_leads(
         "ok": True,
         "engine": engine,
         "city": city,
+        "profile": profile,
         "hunted": len(created),
         "skipped_duplicates": skipped,
         "leads": created,

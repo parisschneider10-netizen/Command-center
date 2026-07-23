@@ -156,6 +156,7 @@ async def tool_get_briefing(db: AsyncSession = Depends(get_db)) -> VoiceToolResp
         f"You have {stats.tasks_pending} pending tasks, "
         f"{stats.tasks_in_progress} in progress, and "
         f"{stats.decisions_pending} decisions waiting. "
+        f"{stats.uncertainty_pending} uncertainty reviews need you. "
         f"{stats.voice_sessions_today} voice sessions today."
     )
     if task_lines:

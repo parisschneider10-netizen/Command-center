@@ -16,6 +16,7 @@ from app.value_node.eco_express import (
     dispatch_hunter,
     eco_status,
     generate_strike_list,
+    hunter_close_sheet,
     list_jobs,
 )
 
@@ -61,6 +62,15 @@ async def get_jobs(
     _: str = Depends(get_current_user),
 ) -> list[dict]:
     return await list_jobs(db)
+
+
+@router.get("/hunter-sheet")
+async def get_hunter_sheet(
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_user),
+) -> dict:
+    """Field closer sheet — targeted doors with phone + pitch."""
+    return await hunter_close_sheet(db)
 
 
 @router.post("/strike-list")
