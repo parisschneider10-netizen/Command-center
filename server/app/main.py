@@ -33,6 +33,7 @@ from app.routes.eco_express import router as eco_express_router
 from app.routes.launch import router as launch_router
 from app.routes.leads import router as leads_router
 from app.routes.value_node import router as value_node_router
+from app.routes.uncertainty import router as uncertainty_router
 from app.routes.voice import router as voice_router
 
 
@@ -93,6 +94,7 @@ app.include_router(kc_blitz_router)
 app.include_router(sovereign_stay_router)
 app.include_router(overwatch_router)
 app.include_router(ready_room_router)
+app.include_router(uncertainty_router)
 app.include_router(telegram_router)
 app.include_router(hive_router)
 app.include_router(ground_force_router)

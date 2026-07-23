@@ -53,6 +53,8 @@ SARA (voice)           →  Call when hands are busy
 2. Portal → **Launch** tab → check door count
 3. Optional: **Wire SARA** if voice badge says not wired
 
+| **Uncertainty** tab | Low-confidence OCR held — approve before live execute |
+
 ---
 
 ## Portal buttons (Launch tab)

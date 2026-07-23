@@ -492,6 +492,33 @@ class EcoExpressJob(Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
+class UncertaintyStatus(str, enum.Enum):
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
+    overridden = "overridden"
+
+
+class UncertaintyReview(Base):
+    """Low-confidence perception → Commander review before irreversible action."""
+
+    __tablename__ = "uncertainty_reviews"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source_node: Mapped[str] = mapped_column(String(128))
+    payload_json: Mapped[str] = mapped_column(Text)
+    confidence_score: Mapped[float] = mapped_column(Float)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    vault_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    status: Mapped[UncertaintyStatus] = mapped_column(
+        Enum(UncertaintyStatus), default=UncertaintyStatus.pending
+    )
+    commander_resolution: Mapped[str | None] = mapped_column(Text, nullable=True)
+    resolved_intent: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
 class HumanEscalation(Base):
     __tablename__ = "human_escalations"
 

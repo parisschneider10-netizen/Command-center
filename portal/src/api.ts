@@ -67,6 +67,21 @@ export interface DashboardStats {
   decisions_pending: number;
   voice_sessions_today: number;
   recent_activity_count: number;
+  uncertainty_pending?: number;
+}
+
+export interface UncertaintyReview {
+  id: number;
+  source_node: string;
+  payload_json: string;
+  confidence_score: number;
+  reason: string | null;
+  vault_path: string | null;
+  status: string;
+  commander_resolution: string | null;
+  resolved_intent: string | null;
+  created_at: string;
+  resolved_at: string | null;
 }
 
 export interface Task {
@@ -279,4 +294,17 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ payment_proof, scheduled_slot, dry_run: false }),
     }),
+  ecoHunterSheet: () => request<Record<string, unknown>>("/api/eco-express/hunter-sheet"),
+  uncertaintyReviews: (status = "pending") =>
+    request<UncertaintyReview[]>(`/api/uncertainty/reviews?status=${status}`),
+  uncertaintyResolve: (
+    reviewId: number,
+    body: { action: string; corrected_intent?: string; notes?: string; mode?: string }
+  ) =>
+    request<Record<string, unknown>>(`/api/uncertainty/reviews/${reviewId}/resolve`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  readyRoomScan: () =>
+    request<Record<string, unknown>>("/api/ready-room/scan", { method: "POST" }),
 };

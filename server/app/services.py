@@ -74,6 +74,10 @@ async def get_dashboard_stats(db: AsyncSession) -> DashboardStats:
     )
     recent_activity = await db.scalar(select(func.count()).select_from(ActivityLog))
 
+    from app.uncertainty.service import pending_count
+
+    uncertainty_pending = await pending_count(db)
+
     return DashboardStats(
         tasks_pending=pending or 0,
         tasks_in_progress=in_progress or 0,
@@ -81,4 +85,5 @@ async def get_dashboard_stats(db: AsyncSession) -> DashboardStats:
         decisions_pending=decisions_pending or 0,
         voice_sessions_today=voice_today or 0,
         recent_activity_count=recent_activity or 0,
+        uncertainty_pending=uncertainty_pending,
     )

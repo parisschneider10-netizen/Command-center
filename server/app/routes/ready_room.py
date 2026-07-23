@@ -46,14 +46,21 @@ class ReadyRoomChatIn(BaseModel):
 
 
 @router.get("/status")
-async def ready_room_status(_: str = Depends(get_current_user)) -> dict:
+async def ready_room_status(
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_user),
+) -> dict:
     """Ready Room snapshot — pending intents, folders, Obsidian paths."""
+    from app.uncertainty.service import pending_count
+
     root = ready_room_root()
     pending = [n for n in list_ready_room_notes("intent") if n.get("status") == "pending"]
+    uncertainty = await pending_count(db)
     return {
         "ok": True,
         "vault_path": str(root.relative_to(Path(settings.vault_path).parent)),
         "obsidian_root": "ready-room/",
+        "uncertainty_pending": uncertainty,
         "folders": {
             "intent": "Type intents here (Obsidian template)",
             "handwritten": "Drop photo scans of handwritten notes",
@@ -168,7 +175,7 @@ async def ingest_handwritten_path(
     if not full.exists():
         raise HTTPException(status_code=404, detail="Image not found in vault")
     try:
-        result = await process_handwritten_note(full)
+        result = await process_handwritten_note(full, db=db)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     await log_activity(db, "ready_room_handwritten", body.path, result)
@@ -196,6 +203,7 @@ async def ingest_handwritten(
             data,
             original_name=file.filename or "note.jpg",
             mime=file.content_type,
+            db=db,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

@@ -24,7 +24,9 @@ async def scan_pending_intents(db: AsyncSession) -> dict:
     Process all ready-room/intent/*.md with status: pending.
     Also ingests new handwritten images first (Obsidian drop folder).
     """
-    handwritten = await scan_handwritten_inbox()
+    handwritten = await scan_handwritten_inbox(db)
+
+    from app.uncertainty.service import below_threshold, parse_confidence
 
     root = ready_room_root()
     intent_dir = root / "intent"
@@ -45,6 +47,28 @@ async def scan_pending_intents(db: AsyncSession) -> dict:
 
         mode = str(meta.get("mode", "drill")).lower()
         drill = mode in ("drill", "dry_run", "sights-on", "test")
+
+        if meta.get("uncertainty_held") or meta.get("status") == "uncertainty_held":
+            outcomes.append(
+                {
+                    "file": path.name,
+                    "ok": False,
+                    "error": "held for uncertainty review — resolve in portal Uncertainty tab",
+                }
+            )
+            continue
+
+        confidence, _ = parse_confidence(meta, body)
+        if below_threshold(confidence) and not drill:
+            outcomes.append(
+                {
+                    "file": path.name,
+                    "ok": False,
+                    "error": f"confidence {confidence:.2f} below threshold — review in portal",
+                }
+            )
+            continue
+
         auto_flag = bool(meta.get("auto_execute", True))
         if drill:
             intent_text = f"{intent_text.strip()} — drill only, dry run, sights on"

@@ -11,14 +11,14 @@ import {
   LeadPipeline,
   SovereignStatus,
   Task,
-  VoiceSession,
+  UncertaintyReview,
   api,
   clearToken,
   getToken,
 } from "./api";
 import Login from "./Login";
 
-type Tab = "launch" | "overview" | "empire" | "tasks" | "decisions" | "voice" | "activity";
+type Tab = "launch" | "uncertainty" | "overview" | "empire" | "tasks" | "decisions" | "voice" | "activity";
 
 function StatCard({ label, value, accent }: { label: string; value: number; accent?: string }) {
   return (
@@ -76,10 +76,13 @@ function Dashboard() {
   const [presaleWorker, setPresaleWorker] = useState("rah:closer");
   const [presaleProof, setPresaleProof] = useState("");
   const [presaleDrill, setPresaleDrill] = useState(false);
+  const [uncertaintyReviews, setUncertaintyReviews] = useState<UncertaintyReview[]>([]);
+  const [hunterSheet, setHunterSheet] = useState<Record<string, unknown> | null>(null);
+  const [resolveIntent, setResolveIntent] = useState<Record<number, string>>({});
 
   const refresh = useCallback(async () => {
     try {
-      const [b, t, d, v, a, cap, acq, cats, ld, sov, h, deck, pipe, eco, ej] = await Promise.all([
+      const [b, t, d, v, a, cap, acq, cats, ld, sov, h, deck, pipe, eco, ej, unc, sheet] = await Promise.all([
         api.briefing(),
         api.tasks(),
         api.decisions(),
@@ -95,6 +98,8 @@ function Dashboard() {
         api.leadPipeline().catch(() => null),
         api.ecoStatus().catch(() => null),
         api.ecoJobs().catch(() => []),
+        api.uncertaintyReviews().catch(() => []),
+        api.ecoHunterSheet().catch(() => null),
       ]);
       setBriefing(b);
       setTasks(t);
@@ -110,6 +115,8 @@ function Dashboard() {
       setLeadPipeline(pipe);
       setEcoEconomics((eco as { economics?: Record<string, unknown> })?.economics ?? null);
       setEcoJobs(ej);
+      setUncertaintyReviews(unc);
+      setHunterSheet(sheet);
       const categoryMap: Record<string, string> = cats.categories ?? {};
       setCategories(categoryMap);
       if (Object.keys(categoryMap).length && !categoryMap[addCategory]) {
@@ -296,12 +303,13 @@ function Dashboard() {
           <StatCard label="In Progress" value={stats.tasks_in_progress} accent="var(--accent)" />
           <StatCard label="Completed" value={stats.tasks_completed} accent="var(--success)" />
           <StatCard label="Decisions Waiting" value={stats.decisions_pending} accent="var(--danger)" />
+          <StatCard label="Uncertainty" value={stats.uncertainty_pending ?? 0} accent="var(--warning)" />
           <StatCard label="Voice Calls Today" value={stats.voice_sessions_today} accent="var(--voice)" />
         </section>
       )}
 
       <nav className="tabs">
-        {(["launch", "overview", "empire", "tasks", "decisions", "voice", "activity"] as Tab[]).map((t) => (
+        {(["launch", "uncertainty", "overview", "empire", "tasks", "decisions", "voice", "activity"] as Tab[]).map((t) => (
           <button
             key={t}
             className={tab === t ? "tab active" : "tab"}
@@ -381,6 +389,28 @@ function Dashboard() {
                 ))
               )}
             </Panel>
+            <Panel title="Closer sheet — send hunter to door" wide>
+              {hunterSheet ? (
+                <>
+                  <p className="launch-hint">
+                    <strong>{String(hunterSheet.city)}</strong> — {String(hunterSheet.why_this_city)}
+                    {" "}{String(hunterSheet.count)} doors ready · collect ${String(hunterSheet.collect_usd)} before work.
+                  </p>
+                  <pre className="pitch-block">{String(hunterSheet.pitch)}</pre>
+                  {(hunterSheet.doors as Array<Record<string, unknown>>)?.slice(0, 15).map((d) => (
+                    <div key={String(d.id)} className="row-item compact">
+                      <div className="row-main">
+                        <strong>#{String(d.id)} {String(d.homeowner_name)}</strong>
+                        <p>{String(d.phone)} · {String(d.address)}</p>
+                      </div>
+                      <span className="badge">{String(d.status)}</span>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <EmptyState text="Build strike list first — closer sheet fills automatically." />
+              )}
+            </Panel>
             <Panel title="Loop B — homeowner paid $149">
               <form className="add-form" onSubmit={async (e) => {
                 e.preventDefault();
@@ -412,6 +442,72 @@ function Dashboard() {
                 </label>
                 <button type="submit" className="btn-primary">Send</button>
               </form>
+            </Panel>
+            {launchStatus && <p className="form-status launch-status wide">{launchStatus}</p>}
+          </div>
+        ) : tab === "uncertainty" ? (
+          <div className="grid-2">
+            <Panel title="Uncertainty queue — sensation held" wide>
+              <p className="launch-hint">
+                Low-confidence vision/OCR (&lt;85%) stops auto-execute. Approve, correct intent, or reject.
+              </p>
+              {uncertaintyReviews.length === 0 ? (
+                <EmptyState text="No pending uncertainty reviews. System is clear." />
+              ) : (
+                uncertaintyReviews.map((r) => {
+                  let payload: Record<string, unknown> = {};
+                  try {
+                    payload = JSON.parse(r.payload_json);
+                  } catch {
+                    payload = {};
+                  }
+                  return (
+                    <div key={r.id} className="row-item">
+                      <div className="row-main">
+                        <strong>{r.source_node}</strong>
+                        <p>Confidence {(r.confidence_score * 100).toFixed(0)}% — {r.reason || "review needed"}</p>
+                        <p className="mono">{String(payload.suggested_intent || payload.intent || "")}</p>
+                      </div>
+                      <form
+                        className="add-form compact"
+                        onSubmit={async (e) => {
+                          e.preventDefault();
+                          setLaunchStatus(null);
+                          try {
+                            await api.uncertaintyResolve(r.id, {
+                              action: "override",
+                              corrected_intent: resolveIntent[r.id] || String(payload.suggested_intent || ""),
+                              mode: "live",
+                            });
+                            await api.readyRoomScan();
+                            setLaunchStatus(`Review ${r.id} approved — scan fired.`);
+                            await refresh();
+                          } catch (err) {
+                            setLaunchStatus(err instanceof Error ? err.message : "Resolve failed");
+                          }
+                        }}
+                      >
+                        <input
+                          value={resolveIntent[r.id] ?? String(payload.suggested_intent || "")}
+                          onChange={(e) => setResolveIntent({ ...resolveIntent, [r.id]: e.target.value })}
+                          placeholder="Corrected intent"
+                        />
+                        <button type="submit" className="btn-primary">Approve & execute</button>
+                        <button
+                          type="button"
+                          className="btn-ghost"
+                          onClick={async () => {
+                            await api.uncertaintyResolve(r.id, { action: "reject" });
+                            await refresh();
+                          }}
+                        >
+                          Reject
+                        </button>
+                      </form>
+                    </div>
+                  );
+                })
+              )}
             </Panel>
             {launchStatus && <p className="form-status launch-status wide">{launchStatus}</p>}
           </div>
@@ -747,6 +843,7 @@ const dashboardStyles = `
   .btn-hunt:disabled { opacity: 0.6; }
   .launch-drill-inline { width: 100%; text-align: center; }
   .launch-hint { padding: 0 1.25rem 1rem; font-size: 0.8rem; color: var(--text-muted); margin: 0; }
+  .pitch-block { white-space: pre-wrap; font-size: 0.75rem; background: var(--bg-elevated); padding: 0.75rem; border-radius: 6px; margin: 0 1.25rem 1rem; max-height: 200px; overflow: auto; }
   .pipeline-stats { padding: 0.75rem 1.25rem 0; font-size: 0.8rem; color: var(--accent); margin: 0; }
   .webhook-hint { padding: 0 1.25rem 1rem; font-size: 0.75rem; color: var(--text-muted); }
   .launch-status.wide { grid-column: 1 / -1; padding: 0 1.25rem 1rem; }
